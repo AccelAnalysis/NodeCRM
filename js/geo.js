@@ -155,7 +155,8 @@
     function paintSummary() {
       var text = summary(draft.market.geo);
       if (summaryEl) {
-        summaryEl.textContent = text || "Add a state or drop a pin. A short description will appear here.";
+        summaryEl.hidden = !text;
+        summaryEl.textContent = text || "";
       }
     }
 
@@ -163,7 +164,7 @@
       if (!chipsEl) return;
       var items = places();
       if (!items.length) {
-        chipsEl.innerHTML = '<p class="fine">Nothing selected yet.</p>';
+        chipsEl.innerHTML = "";
         paintSummary();
         draw();
         return;
@@ -295,13 +296,12 @@
       var minutes = [15, 30, 45, 60].map(function (value) {
         return '<button type="button" class="chip' + (pin.driveMinutes === value ? " is-on" : "") + '" data-geo-minutes="' + value + '">' + value + " min</button>";
       }).join("");
-      box.innerHTML = '<p class="fine">Latest pin: <strong>' + NS.util.esc(pin.label) + "</strong></p>" +
-        '<div class="segmented" role="radiogroup" aria-label="How wide is the pin">' +
-        '<button type="button" class="segmented-btn' + (pin.coverage !== "drive" ? " is-on" : "") + '" data-geo-coverage="radius">Miles around the pin</button>' +
-        '<button type="button" class="segmented-btn' + (pin.coverage === "drive" ? " is-on" : "") + '" data-geo-coverage="drive">Drive-time sketch</button></div>' +
+      box.innerHTML = '<div class="segmented" role="radiogroup" aria-label="How wide is the pin">' +
+        '<button type="button" class="segmented-btn' + (pin.coverage !== "drive" ? " is-on" : "") + '" data-geo-coverage="radius">Miles</button>' +
+        '<button type="button" class="segmented-btn' + (pin.coverage === "drive" ? " is-on" : "") + '" data-geo-coverage="drive">Drive time</button></div>' +
         (pin.coverage === "drive"
-          ? '<div class="chip-row">' + minutes + '</div><p class="fine">About ' + pin.driveMinutes + " minutes is drawn as " + radius + " miles in a straight line at " + MPH + " mph. Real drive time needs roads. This prototype does not have that.</p>"
-          : '<label class="slider-label">Radius <strong>' + pin.radiusMiles + ' miles</strong><input data-geo-radius type="range" min="5" max="150" step="5" value="' + pin.radiusMiles + '"></label>');
+          ? '<div class="chip-row">' + minutes + '</div><details class="disclosure is-quiet"><summary>Why?</summary><div class="disclosure-body"><p class="why-line">' + pin.driveMinutes + " min is drawn as " + radius + " miles, straight line.</p></div></details>"
+          : '<label class="slider-label"><strong>' + pin.radiusMiles + ' miles</strong><input data-geo-radius type="range" min="5" max="150" step="5" value="' + pin.radiusMiles + '" aria-label="Radius in miles"></label>');
     }
 
     if (mapEl && window.L) {
@@ -433,8 +433,7 @@
     return '<div data-geo class="geo">' +
       '<label>Search a state or place<input data-geo-search data-testid="geo-search" type="text" maxlength="80" placeholder="Texas, or a city" autocomplete="off"></label>' +
       '<div class="geo-results" data-geo-results hidden></div>' +
-      '<div class="geo-map" data-geo-map data-testid="geo-map" role="application" aria-label="Market map. Click to drop a pin."></div>' +
-      '<p class="fine">Click the map to drop a pin. Choose a state from the list to mark a region. Circles are a sketch, not a legal boundary.</p>' +
+      '<div class="geo-map" data-geo-map data-testid="geo-map" role="application" aria-label="Market map"></div>' +
       '<div data-geo-pin hidden></div>' +
       '<div class="chip-row" data-geo-chips></div>' +
       '<p class="geo-summary" data-geo-summary></p>' +

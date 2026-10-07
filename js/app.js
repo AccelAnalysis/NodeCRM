@@ -78,8 +78,10 @@
     NS.channels.close();
     NS.wizard.close();
     if (NS.plan) NS.plan.close();
+    if (NS.dress) NS.dress.close();
+    NS.stages.closeTrigger();
     NS.demo.load();
-    NS.ui.toast("Sample market is on the plane. Email still needs a consent check before it counts as ready.");
+    NS.ui.toast("Sample market.");
   }
 
   async function reset() {
@@ -98,6 +100,8 @@
     NS.channels.close();
     NS.wizard.close();
     if (NS.plan) NS.plan.close();
+    if (NS.dress) NS.dress.close();
+    NS.stages.closeTrigger();
     NS.model.reset();
     NS.ui.toast("Workspace cleared.");
   }
@@ -116,6 +120,8 @@
     else if (action === "remove-stage") removeStage(el.dataset.stageId);
     else if (action === "add-stage") NS.stages.openPopover(el);
     else if (action === "remove-persona") removePersona(el.dataset.personaId);
+    else if (action === "dress-persona") NS.dress.open(el.dataset.personaId);
+    else if (action === "open-trigger") NS.stages.openTrigger(el);
     else if (action === "sample") sample();
     else if (action === "reset") reset();
     else if (action === "check-plan") NS.plan.open();
@@ -130,12 +136,15 @@
     NS.comms.init();
     NS.channels.init();
     NS.plan.init();
+    NS.dress.init();
     NS.model.subscribe(onState);
     syncChrome(NS.model.get());
     NS.plane.render();
     document.addEventListener("click", function (event) {
-      var inside = event.target.closest("#wizard, #comms, #channel-map, #confirm, #plan, #stage-popover");
+      var openingTrigger = event.target.closest("[data-action='open-trigger']");
+      if (!event.target.closest("#trigger-menu") && !openingTrigger) NS.stages.closeTrigger();
       if (!event.target.closest("#stage-popover")) NS.stages.closePopover();
+      var inside = event.target.closest("#wizard, #comms, #channel-map, #confirm, #plan, #stage-popover, #trigger-menu, #dress");
       if (inside) return;
       var el = event.target.closest("[data-action]");
       if (!el) return;
@@ -145,6 +154,7 @@
       if (event.key !== "Escape") return;
       if (NS.ui.confirmOpen()) return;
       if (NS.plan.isOpen()) NS.plan.close();
+      else if (NS.dress.isOpen()) NS.dress.close();
       else if (NS.comms.isOpen()) NS.comms.close();
       else if (NS.wizard.isOpen()) NS.wizard.close();
       else if (NS.channels.isOpen()) NS.channels.close();

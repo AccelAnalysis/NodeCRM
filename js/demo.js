@@ -88,8 +88,8 @@
       ],
       stages: [
         { id: "stage_awareness", name: "Awareness", kind: "awareness" },
-        { id: "stg_demo_consideration", name: "Consideration", kind: "standard" },
-        { id: "stg_demo_enrollment", name: "Enrollment", kind: "standard" }
+        { id: "stg_demo_consideration", name: "Consideration", kind: "standard", advanceOn: "form" },
+        { id: "stg_demo_enrollment", name: "Enrollment", kind: "standard", advanceOn: "contract" }
       ],
       nodes: [
         {

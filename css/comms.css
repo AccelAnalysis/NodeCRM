@@ -36,6 +36,7 @@
 }
 
 .drawer-head { align-items: flex-start; }
+.drawer-head .head-side { align-items: flex-start; }
 
 .drawer-foot {
   padding: 12px 16px 16px;

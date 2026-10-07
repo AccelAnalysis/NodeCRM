@@ -34,6 +34,7 @@
 
   function open(step) {
     NS.stages.closePopover();
+    NS.stages.closeTrigger();
     var state = NS.model.get();
     var segments = state.segments.map(function (segment) {
       return {
@@ -71,7 +72,11 @@
           avatar: persona.avatar ? NS.avatars.normalize(persona.avatar) : NS.avatars.normalize(persona.avatarSeed || 1)
         };
       }),
-      error: ""
+      error: "",
+      focusIndex: 0,
+      trait: "",
+      focusKey: "",
+      personKey: ""
     };
     var wanted = Number(step) || 1;
     if (wanted > 1 && !draft.market.name.trim() && !(draft.market.geo.places || []).length) wanted = 1;
@@ -197,21 +202,14 @@
   }
 
   function stepsHTML() {
-    var labels = ["Where", "Who you can find", "The people", "Look it over"];
-    return '<ol class="step-list">' + labels.map(function (label, index) {
-      var n = index + 1;
-      var cls = n === draft.step ? " is-now" : n < draft.step ? " is-done" : "";
-      return '<li class="' + cls.trim() + '"><span>' + n + "</span>" + label + "</li>";
-    }).join("") + "</ol>";
+    return '<div class="progress" role="progressbar" aria-valuemin="1" aria-valuemax="4" aria-valuenow="' + draft.step + '" aria-label="Step ' + draft.step + ' of 4">' +
+      '<span style="width:' + (draft.step / 4 * 100) + '%"></span></div>';
   }
 
   function marketHTML() {
-    var line = NS.geo.summary(draft.market.geo);
-    return '<label>Market name, if you want one<input data-market-name data-testid="market-name" maxlength="80" placeholder="Optional. For example, Neighborhood studios" value="' + NS.util.esc(draft.market.name) + '"></label>' +
-      "<p class='fine'>Skip the name if the map says it clearly enough.</p>" +
+    return '<label>Name<input data-market-name data-testid="market-name" maxlength="80" placeholder="Optional" value="' + NS.util.esc(draft.market.name) + '"></label>' +
       NS.geo.shell() +
-      (line ? "" : "") +
-      '<details class="disclosure"><summary>A private note, if you need one</summary><div class="disclosure-body">' +
+      '<details class="disclosure is-quiet"><summary>Note</summary><div class="disclosure-body">' +
       '<label>Note<input data-market-note maxlength="140" placeholder="Optional" value="' + NS.util.esc(draft.market.description) + '"></label></div></details>';
   }
 
@@ -225,35 +223,47 @@
 
   function reachHTML(segment) {
     var read = NS.audience.reach(segment);
-    return '<div class="reach is-' + read.level + '" data-testid="reach-read"><strong>' + NS.util.esc(read.title) + "</strong><span>" + NS.util.esc(read.detail) + "</span><em>A simple read, not a promise that a list exists.</em></div>";
+    if (!segment.audience) return "";
+    return '<div class="status-row" data-testid="reach-read"><span class="status-pill is-' + read.level + '">' + NS.util.esc(read.title) + "</span>" +
+      '<details class="disclosure is-quiet"><summary>Why?</summary><div class="disclosure-body"><p class="why-line">' + NS.util.esc(read.detail) + "</p></div></details></div>";
   }
 
   function segmentsHTML() {
-    var cards = draft.segments.map(function (segment, index) {
-      var book = segment.audience === "b2b" ? NS.audience.b2b : segment.audience === "b2c" ? NS.audience.b2c : null;
-      var groups = book ? book.groups.map(function (group) {
-        return "<fieldset><legend>" + NS.util.esc(group.label) + "</legend>" + chipRow(segment, group) + "</fieldset>";
-      }).join("") : "<p class='fine'>Choose people or companies to see the traits you can search for.</p>";
-      var custom = (segment.custom || []).map(function (trait) {
-        return '<span class="place-chip"><span>' + NS.util.esc(trait.label) + '</span><button type="button" class="icon-btn" data-action="trait-remove" data-key="' + NS.util.esc(segment.key) + '" data-trait="' + NS.util.esc(trait.id) + '" aria-label="Remove ' + NS.util.esc(trait.label) + '">' + NS.util.icon("close") + "</button></span>";
-      }).join("");
-      var suggestion = NS.audience.suggestName(segment);
-      return '<section class="check-card"><header class="split"><h3>Group ' + (index + 1) + "</h3>" +
-        '<button type="button" class="icon-btn" data-action="seg-remove" data-index="' + index + '" aria-label="Remove group">' + NS.util.icon("close") + "</button></header>" +
-        '<div class="segmented" role="radiogroup" aria-label="People or companies">' +
-        '<button type="button" class="segmented-btn' + (segment.audience === "b2c" ? " is-on" : "") + '" data-action="audience" data-key="' + NS.util.esc(segment.key) + '" data-audience="b2c" aria-pressed="' + (segment.audience === "b2c" ? "true" : "false") + '">People<small>Households. Sometimes called B2C.</small></button>' +
-        '<button type="button" class="segmented-btn' + (segment.audience === "b2b" ? " is-on" : "") + '" data-action="audience" data-key="' + NS.util.esc(segment.key) + '" data-audience="b2b" aria-pressed="' + (segment.audience === "b2b" ? "true" : "false") + '">Companies<small>A role at a business. Sometimes called B2B.</small></button></div>' +
-        groups +
-        reachHTML(segment) +
-        '<label>What do you call this group?<input data-seg-name="' + NS.util.esc(segment.key) + '" maxlength="48" placeholder="' + NS.util.esc(suggestion || "For example, Studio owners") + '" value="' + NS.util.esc(segment.name) + '"></label>' +
-        '<details class="disclosure"><summary>Add a trait that is not listed</summary><div class="disclosure-body">' +
-        (custom ? '<div class="chip-row">' + custom + "</div>" : "") +
-        '<div class="edit-row"><input data-trait-input="' + NS.util.esc(segment.key) + '" maxlength="32" placeholder="A short trait" aria-label="Custom trait">' +
-        '<button type="button" class="btn" data-action="trait-add" data-key="' + NS.util.esc(segment.key) + '">Add trait</button></div>' +
-        "<p class='fine'>Custom traits make the group harder to find as a ready-made list.</p></div></details></section>";
+    if (draft.focusIndex >= draft.segments.length) draft.focusIndex = 0;
+    var index = draft.focusIndex || 0;
+    var segment = draft.segments[index];
+    var switcher = '<div class="segmented" role="tablist" aria-label="Groups">' + draft.segments.map(function (item, itemIndex) {
+      var label = item.name.trim() || String(itemIndex + 1);
+      return '<button type="button" class="segmented-btn' + (itemIndex === index ? " is-on" : "") + '" data-action="focus-seg" data-index="' + itemIndex + '" aria-pressed="' + (itemIndex === index ? "true" : "false") + '">' + NS.util.esc(label) + "</button>";
+    }).join("") + '<button type="button" class="segmented-btn" data-action="seg-add" aria-label="Add group">+</button></div>';
+    var book = segment.audience === "b2b" ? NS.audience.b2b : segment.audience === "b2c" ? NS.audience.b2c : null;
+    var traits = "";
+    if (book) {
+      var traitId = draft.trait && book.groups.some(function (group) { return group.id === draft.trait; }) ? draft.trait : book.groups[0].id;
+      draft.trait = traitId;
+      var tabs = '<div class="segmented" role="tablist" aria-label="Traits">' + book.groups.map(function (group) {
+        var on = group.id === traitId;
+        return '<button type="button" class="segmented-btn' + (on ? " is-on" : "") + '" data-action="focus-trait" data-group="' + group.id + '" aria-pressed="' + (on ? "true" : "false") + '">' + NS.util.esc(group.label) + "</button>";
+      }).join("") + "</div>";
+      var group = book.groups.filter(function (item) { return item.id === traitId; })[0];
+      traits = tabs + chipRow(segment, group);
+    }
+    var custom = (segment.custom || []).map(function (trait) {
+      return '<span class="place-chip"><span>' + NS.util.esc(trait.label) + '</span><button type="button" class="icon-btn" data-action="trait-remove" data-key="' + NS.util.esc(segment.key) + '" data-trait="' + NS.util.esc(trait.id) + '" aria-label="Remove ' + NS.util.esc(trait.label) + '">' + NS.util.icon("close") + "</button></span>";
     }).join("");
-    return '<p class="sheet-lead">Could you find these people on a list or a network you already use?</p>' + cards +
-      '<button type="button" class="btn" data-action="seg-add">Add another group</button>';
+    var suggestion = NS.audience.suggestName(segment);
+    return switcher +
+      '<div class="segmented" role="radiogroup" aria-label="People or companies">' +
+      '<button type="button" class="segmented-btn' + (segment.audience === "b2c" ? " is-on" : "") + '" data-action="audience" data-key="' + NS.util.esc(segment.key) + '" data-audience="b2c" aria-pressed="' + (segment.audience === "b2c" ? "true" : "false") + '">People</button>' +
+      '<button type="button" class="segmented-btn' + (segment.audience === "b2b" ? " is-on" : "") + '" data-action="audience" data-key="' + NS.util.esc(segment.key) + '" data-audience="b2b" aria-pressed="' + (segment.audience === "b2b" ? "true" : "false") + '">Companies</button></div>' +
+      traits +
+      reachHTML(segment) +
+      '<label>Name<input data-seg-name="' + NS.util.esc(segment.key) + '" maxlength="48" placeholder="' + NS.util.esc(suggestion || "Name") + '" value="' + NS.util.esc(segment.name) + '"></label>' +
+      '<details class="disclosure is-quiet"><summary>Other trait</summary><div class="disclosure-body">' +
+      (custom ? '<div class="chip-row">' + custom + "</div>" : "") +
+      '<div class="edit-row"><input data-trait-input="' + NS.util.esc(segment.key) + '" maxlength="32" placeholder="Trait" aria-label="Custom trait">' +
+      '<button type="button" class="btn" data-action="trait-add" data-key="' + NS.util.esc(segment.key) + '">Add</button></div></div></details>' +
+      (draft.segments.length > 1 ? '<button type="button" class="text-btn" data-action="seg-remove" data-index="' + index + '">Remove group</button>' : "");
   }
 
   function swatchRow(persona, kind) {
@@ -268,43 +278,43 @@
 
   function personasHTML() {
     var segments = namedSegments();
-    if (!segments.length) return "<p>Add a group first.</p>";
-    return segments.map(function (segment) {
-      var people = draft.personas.filter(function (persona) { return persona.segmentKey === segment.key; });
-      var presets = NS.avatars.presets(segment.audience);
-      var cards = people.map(function (persona) {
-        if (!persona.avatar) persona.avatar = NS.avatars.blank(segment.audience);
-        if (segment.audience === "b2b" && !persona.avatar.formal) persona.avatar = NS.avatars.blank("b2b");
-        if (segment.audience === "b2c" && persona.avatar.formal && !persona.avatar.preset) persona.avatar.formal = false;
-        var presetChips = presets.map(function (preset) {
-          var on = persona.avatar.preset === preset.id;
-          return '<button type="button" class="chip' + (on ? " is-on" : "") + '" data-action="avatar-preset" data-key="' + NS.util.esc(persona.key) + '" data-preset="' + preset.id + '" data-testid="avatar-preset" aria-pressed="' + (on ? "true" : "false") + '">' + NS.util.esc(preset.label) + "</button>";
-        }).join("");
-        var styles = NS.avatars.styles.map(function (label, index) {
-          var on = persona.avatar.style === index;
-          return '<button type="button" class="chip' + (on ? " is-on" : "") + '" data-action="avatar-trait" data-key="' + NS.util.esc(persona.key) + '" data-trait="style" data-value="' + index + '" aria-pressed="' + (on ? "true" : "false") + '">' + label + "</button>";
-        }).join("");
-        return '<article class="persona-editor" data-persona-key="' + NS.util.esc(persona.key) + '">' +
-          '<div class="avatar lg">' + NS.avatars.render(persona.avatar) + "</div>" +
-          '<div class="persona-fields">' +
-          '<p class="fine">' + (segment.audience === "b2b" ? "Company person" : "Household person") + ". Pick a starting face, then adjust it.</p>" +
-          '<div class="chip-row">' + presetChips + "</div>" +
-          '<div class="trait-block"><span>Complexion</span><div class="swatches">' + swatchRow(persona, "skin") + "</div></div>" +
-          '<div class="trait-block"><span>Hair</span><div class="swatches">' + swatchRow(persona, "hair") + "</div></div>" +
-          '<div class="chip-row">' + styles + "</div>" +
-          '<div class="trait-block"><span>' + (persona.avatar.formal ? "Jacket" : "Shirt") + '</span><div class="swatches">' + swatchRow(persona, "attire") + "</div></div>" +
-          '<button type="button" class="chip' + (persona.avatar.glasses ? " is-on" : "") + '" data-action="avatar-glasses" data-key="' + NS.util.esc(persona.key) + '" aria-pressed="' + (persona.avatar.glasses ? "true" : "false") + '">Glasses</button>' +
-          '<label>Name<input data-field="name" maxlength="48" value="' + NS.util.esc(persona.name) + '" placeholder="What you call them"></label>' +
-          '<label>Role<input data-field="role" maxlength="48" value="' + NS.util.esc(persona.role) + '" placeholder="Owner, parent, buyer…"></label>' +
-          '<label class="check"><input data-field="icp" type="checkbox"' + (persona.icp ? " checked" : "") + "> This is the best-fit person (ICP)</label>" +
-          '<label>Why they fit<input data-field="icpNote" maxlength="80" value="' + NS.util.esc(persona.icpNote) + '" placeholder="Optional. Shows on the badge."></label>' +
-          '<button type="button" class="text-btn" data-action="per-remove" data-key="' + NS.util.esc(persona.key) + '">Remove this person</button>' +
-          "</div></article>";
-      }).join("");
-      return '<section class="segment-block"><header><h3>' + NS.util.esc(segment.name) + "</h3>" +
-        '<button type="button" class="btn" data-action="per-add" data-key="' + NS.util.esc(segment.key) + '">Add a person</button></header>' +
-        (cards || '<p class="fine">No one in this group yet.</p>') + "</section>";
-    }).join("");
+    if (!segments.length) return "";
+    var segIndex = segments.findIndex(function (segment) { return segment.key === draft.focusKey; });
+    if (segIndex < 0) segIndex = 0;
+    draft.focusKey = segments[segIndex].key;
+    var segment = segments[segIndex];
+    var switcher = segments.length > 1
+      ? '<div class="segmented" role="tablist" aria-label="Groups">' + segments.map(function (item) {
+        var on = item.key === segment.key;
+        return '<button type="button" class="segmented-btn' + (on ? " is-on" : "") + '" data-action="focus-key" data-key="' + NS.util.esc(item.key) + '" aria-pressed="' + (on ? "true" : "false") + '">' + NS.util.esc(item.name) + "</button>";
+      }).join("") + "</div>"
+      : "";
+    var people = draft.personas.filter(function (persona) { return persona.segmentKey === segment.key; });
+    if (draft.personKey && !people.some(function (persona) { return persona.key === draft.personKey; })) draft.personKey = "";
+    if (!draft.personKey && people.length) draft.personKey = people[0].key;
+    var faces = '<div class="preset-row">' + people.map(function (persona) {
+      var on = persona.key === draft.personKey;
+      return '<button type="button" class="preset' + (on ? " is-on" : "") + '" data-action="focus-person" data-key="' + NS.util.esc(persona.key) + '" aria-pressed="' + (on ? "true" : "false") + '" aria-label="' + NS.util.esc(persona.name || "Person") + '"><span class="avatar sm">' + NS.avatars.render(persona.avatar || persona.avatarSeed) + "</span></button>";
+    }).join("") + '<button type="button" class="preset preset-add" data-action="per-add" data-key="' + NS.util.esc(segment.key) + '" aria-label="Add a person">' + NS.util.icon("plus") + "</button></div>";
+    var persona = people.filter(function (item) { return item.key === draft.personKey; })[0];
+    if (!persona) return switcher + faces;
+    if (!persona.avatar) persona.avatar = NS.avatars.blank(segment.audience);
+    var presets = NS.avatars.presets(segment.audience);
+    var presetFaces = '<div class="preset-row">' + presets.map(function (preset) {
+      var on = persona.avatar.preset === preset.id;
+      return '<button type="button" class="preset' + (on ? " is-on" : "") + '" data-action="avatar-preset" data-key="' + NS.util.esc(persona.key) + '" data-preset="' + preset.id + '" data-testid="avatar-preset" aria-pressed="' + (on ? "true" : "false") + '" aria-label="' + NS.util.esc(preset.label) + '"><span class="avatar sm">' + NS.avatars.render(preset) + "</span></button>";
+    }).join("") + "</div>";
+    return switcher + faces +
+      '<article class="dress-layout" data-persona-key="' + NS.util.esc(persona.key) + '">' +
+      '<div class="avatar xl">' + NS.avatars.render(persona.avatar) + "</div>" +
+      presetFaces +
+      '<label>Name<input data-field="name" maxlength="48" value="' + NS.util.esc(persona.name) + '" placeholder="Name"></label>' +
+      '<label>Role<input data-field="role" maxlength="48" value="' + NS.util.esc(persona.role) + '" placeholder="Role"></label>' +
+      '<label class="check"><input data-field="icp" type="checkbox"' + (persona.icp ? " checked" : "") + "> Best fit</label>" +
+      '<details class="disclosure is-quiet"' + (persona.icp ? " open" : "") + "><summary>Note</summary><div class=\"disclosure-body\">" +
+      '<label>Note<input data-field="icpNote" maxlength="80" value="' + NS.util.esc(persona.icpNote) + '" placeholder="Optional"></label></div></details>' +
+      '<button type="button" class="text-btn" data-action="per-remove" data-key="' + NS.util.esc(persona.key) + '">Remove</button>' +
+      "</article>";
   }
 
   function reviewHTML() {
@@ -318,20 +328,18 @@
           NS.util.esc(persona.name) + "</strong>" + (persona.icp ? ' <span class="icp">ICP</span>' : "") +
           (persona.role ? '<div class="persona-role">' + NS.util.esc(persona.role) + "</div>" : "") + "</div></div>";
       }).join("");
-      return '<section class="review-block"><h3>' + NS.util.esc(segment.name) + " · " + (segment.audience === "b2b" ? "Companies" : "People") + "</h3>" +
-        '<p class="fine">' + NS.util.esc(read.title) + ". " + NS.util.esc(read.detail) + "</p>" +
-        (cards || "<p class='fine'>No people yet</p>") + "</section>";
+      return '<section class="review-block"><h3>' + NS.util.esc(segment.name) + "</h3>" +
+        '<span class="status-pill is-' + read.level + '">' + NS.util.esc(read.title) + "</span>" +
+        (cards || "") + "</section>";
     }).join("");
     var senderReady = data.sender.name && data.sender.postal;
-    return "<p><strong>" + NS.util.esc(data.market.name || "Untitled market") + "</strong></p>" +
+    return "<p><strong>" + NS.util.esc(data.market.name || "Market") + "</strong></p>" +
       (line ? "<p>" + NS.util.esc(line) + "</p>" : "") +
-      (data.market.description ? "<p class='fine'>" + NS.util.esc(data.market.description) + "</p>" : "") +
       body +
-      '<section class="check-card"><h3>Sender card</h3><p class="fine">Marketing email needs your name and a real mailing address. You can fill this now or when you write the first email.</p>' +
-      '<label>Name people should see<input data-sender-name maxlength="80" value="' + NS.util.esc(draft.sender.name) + '" placeholder="Your name or company"></label>' +
-      '<label>Mailing address<input data-sender-postal maxlength="160" value="' + NS.util.esc(draft.sender.postal) + '" placeholder="Street, city, state, ZIP"></label>' +
-      '<p class="fine">' + (senderReady ? "Email can include this address." : "Email stays incomplete until this card is filled in.") + "</p></section>" +
-      '<p class="legal-note">' + NS.util.esc(NS.compliance.DISCLAIMER) + "</p>";
+      '<div class="from-line"><label>From<input data-sender-name maxlength="80" value="' + NS.util.esc(draft.sender.name) + '" placeholder="Name"></label>' +
+      '<label>Address<input data-sender-postal maxlength="160" value="' + NS.util.esc(draft.sender.postal) + '" placeholder="Street, city, ZIP"></label></div>' +
+      '<span class="status-pill is-' + (senderReady ? "ok" : "wait") + '">' + (senderReady ? "Ready" : "Needs a sender") + "</span>" +
+      '<details class="disclosure is-quiet"><summary>Not legal advice</summary><div class="disclosure-body"><p class="why-line">' + NS.util.esc(NS.compliance.DISCLAIMER) + "</p></div></details>";
   }
 
   function render() {
@@ -339,19 +347,14 @@
       geoHandle.destroy();
       geoHandle = null;
     }
-    var titles = [
-      ["Where are they?", "Pick a region, or drop a pin. A name is optional."],
-      ["Could you find them?", "Choose traits you could search for. The read tells you if a list is realistic."],
-      ["Who are they?", "Give each person a face and a name. Best-fit is a badge, not a separate row."],
-      ["Look it over", "This is what lands on the plane. Messages come next, one step at a time."]
-    ];
-    var meta = titles[draft.step - 1];
+    var titles = ["Where", "Find", "People", "Review"];
+    var meta = [titles[draft.step - 1], ""];
     var body = draft.step === 1 ? marketHTML() : draft.step === 2 ? segmentsHTML() : draft.step === 3 ? personasHTML() : reviewHTML();
     var nextLabel = draft.step === 4 ? "Put this on the plane" : "Continue";
     var wide = draft.step === 1 ? " is-wide" : "";
     root().innerHTML = '<form class="wizard-card' + wide + '" data-testid="wizard-card" role="dialog" aria-modal="true" aria-labelledby="wizard-title">' +
       '<div class="sheet-grabber" aria-hidden="true"></div>' +
-      '<header class="wizard-head"><div><p class="caption">Step ' + draft.step + ' of 4</p><h2 id="wizard-title">' + meta[0] + '</h2><p class="sheet-lead">' + meta[1] + "</p></div>" +
+      '<header class="wizard-head"><div><p class="caption">' + draft.step + ' of 4</p><h2 id="wizard-title">' + meta[0] + "</h2></div>" +
       '<button type="button" class="icon-btn" data-action="wizard-close" aria-label="Close">' + NS.util.icon("close") + "</button></header>" +
       stepsHTML() +
       '<div class="wizard-body">' + body + "</div>" +
@@ -404,7 +407,7 @@
     }
     NS.model.applyMarketDraft(data);
     close();
-    NS.ui.toast("The market is on the plane. Open a circle to plan the first message.");
+    NS.ui.toast("On the plane.");
   }
 
   async function onClick(event) {
@@ -426,8 +429,33 @@
       render();
       return;
     }
+    if (action === "focus-seg") {
+      draft.focusIndex = Number(button.dataset.index) || 0;
+      draft.trait = "";
+      draft.error = "";
+      render();
+      return;
+    }
+    if (action === "focus-trait") {
+      draft.trait = button.dataset.group || "";
+      render();
+      return;
+    }
+    if (action === "focus-key") {
+      draft.focusKey = button.dataset.key || "";
+      draft.personKey = "";
+      render();
+      return;
+    }
+    if (action === "focus-person") {
+      draft.personKey = button.dataset.key || "";
+      render();
+      return;
+    }
     if (action === "seg-add") {
       draft.segments.push(blankSegment());
+      draft.focusIndex = draft.segments.length - 1;
+      draft.trait = "";
       draft.error = "";
       render();
       return;
@@ -500,7 +528,10 @@
     }
     if (action === "per-add") {
       var parent = segmentByKey(button.dataset.key);
-      draft.personas.push(blankPersona(button.dataset.key, parent ? parent.audience : "b2c"));
+      var created = blankPersona(button.dataset.key, parent ? parent.audience : "b2c");
+      draft.personas.push(created);
+      draft.personKey = created.key;
+      draft.focusKey = button.dataset.key;
       draft.error = "";
       render();
       return;

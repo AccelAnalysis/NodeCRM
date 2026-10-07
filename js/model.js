@@ -128,10 +128,12 @@
       personas: [],
       stages: Array.isArray(data.stages) && data.stages.length
         ? data.stages.map(function (stage) {
+          var advance = NS.registry.eventById(stage.advanceOn);
           return {
             id: String(stage.id),
             name: String(stage.name || "Stage").trim() || "Stage",
-            kind: stage.kind === "awareness" ? "awareness" : "standard"
+            kind: stage.kind === "awareness" ? "awareness" : "standard",
+            advanceOn: advance ? advance.id : ""
           };
         })
         : base.stages,
@@ -160,6 +162,10 @@
       seenAwareness = true;
     });
     if (!seenAwareness) next.stages[0].kind = "awareness";
+    next.stages.forEach(function (stage) {
+      if (stage.kind === "awareness") stage.advanceOn = "";
+      else stage.advanceOn = stage.advanceOn || "";
+    });
     next.stages.sort(function (a, b) {
       return (a.kind === "awareness" ? 0 : 1) - (b.kind === "awareness" ? 0 : 1);
     });
@@ -430,6 +436,16 @@
     var dropped = others.slice(defs.length - 1);
     var droppedIds = {};
     dropped.forEach(function (stage) { droppedIds[stage.id] = true; });
+    next.forEach(function (stage) {
+      if (stage.kind === "awareness") {
+        stage.advanceOn = "";
+        return;
+      }
+      if (!stage.advanceOn) {
+        var suggested = NS.registry.defaultEventFor(stage.name);
+        if (suggested) stage.advanceOn = suggested;
+      }
+    });
     state.stages = next;
     state.nodes = state.nodes.filter(function (node) { return !droppedIds[node.stageId]; });
     state.awareness.people.forEach(function (person) {
@@ -437,6 +453,53 @@
     });
     commit({ render: "plane" });
     return { ok: true };
+  }
+
+  function updatePersona(id, patch) {
+    var persona = personaById(id);
+    if (!persona || !patch) return { ok: false };
+    if (patch.name != null) {
+      var name = String(patch.name).trim().slice(0, 48);
+      if (name) persona.name = name;
+    }
+    if (patch.role != null) persona.role = String(patch.role).slice(0, 48);
+    if (patch.icp != null) persona.icp = !!patch.icp;
+    if (patch.avatar) {
+      persona.avatar = NS.avatars.normalize(Object.assign({}, persona.avatar || {}, patch.avatar));
+      if (patch.avatar.preset != null) persona.avatar.preset = String(patch.avatar.preset || "");
+    }
+    commit({ render: "plane" });
+    return { ok: true };
+  }
+
+  function nextStage(stageId) {
+    var index = state.stages.findIndex(function (stage) { return stage.id === stageId; });
+    if (index < 0) return null;
+    return state.stages[index + 1] || null;
+  }
+
+  function setAdvance(stageId, eventId) {
+    var stage = stageById(stageId);
+    if (!stage || stage.kind === "awareness") return { ok: false };
+    if (!eventId) {
+      stage.advanceOn = "";
+      commit({ render: "plane" });
+      return { ok: true };
+    }
+    var event = NS.registry.eventById(eventId);
+    if (!event) return { ok: false };
+    stage.advanceOn = event.id;
+    commit({ render: "plane" });
+    return { ok: true };
+  }
+
+  function markAdvance(personaId, stageId) {
+    var next = nextStage(stageId);
+    if (!next || !next.advanceOn) return { ok: false, error: "Choose what moves people into the next stage." };
+    var existing = nodeAt(personaId, next.id);
+    if (existing) return { ok: true, stage: next, node: existing, existed: true };
+    var node = createNode(personaId, next.id);
+    return { ok: true, stage: next, node: node, existed: false };
   }
 
   function peekAdvanceStage() {
@@ -599,21 +662,15 @@
   }
 
   function summary(node) {
-    var ready = [];
-    var waiting = [];
+    var parts = [];
     NS.registry.list(state).forEach(function (ch) {
       var item = node.comms[ch.id];
       if (!item || !item.enabled) return;
-      var label = ch.label + " every " + cadencePhrase(item.cadence.interval, item.cadence.unit);
-      if (NS.compliance.ready(ch, item, state)) ready.push(label);
-      else waiting.push(ch.label);
+      var st = NS.compliance.status(ch, item, state);
+      parts.push(st.label && st.label !== "Ready" ? ch.label + " · " + st.label : ch.label);
     });
-    var mode = node.mode === "cycle" ? "Stays here" : "Then moves on";
-    if (!ready.length && !waiting.length) return mode + " · no channel yet";
-    var text = mode;
-    if (ready.length) text += " · Ready: " + ready.join(", ");
-    if (waiting.length) text += " · Still to check: " + waiting.join(", ");
-    return text;
+    if (!parts.length) return "No channel";
+    return parts.join(", ");
   }
 
   function advancedCount(stageId) {
@@ -801,6 +858,7 @@
     reset: reset,
     replaceAll: replaceAll,
     applyMarketDraft: applyMarketDraft,
+    updatePersona: updatePersona,
     removePersona: removePersona,
     addStage: addStage,
     renameStage: renameStage,
@@ -809,6 +867,9 @@
     planRecommended: planRecommended,
     applyRecommended: applyRecommended,
     peekAdvanceStage: peekAdvanceStage,
+    nextStage: nextStage,
+    setAdvance: setAdvance,
+    markAdvance: markAdvance,
     personaById: personaById,
     stageById: stageById,
     segmentById: segmentById,

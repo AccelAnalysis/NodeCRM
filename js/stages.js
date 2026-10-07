@@ -29,9 +29,12 @@
     }
     var title = '<button type="button" class="stage-title" data-action="rename-stage" data-stage-id="' + stage.id + '" aria-label="Rename ' + NS.util.esc(stage.name) + '">' +
       '<span class="stage-label">' + NS.util.esc(stage.name) + "</span>" + pencil() + "</button>";
+    var event = NS.registry.eventById(stage.advanceOn);
+    var trigger = '<button type="button" class="advance-chip' + (event ? " is-set" : "") + '" data-action="open-trigger" data-stage-id="' + stage.id + '" aria-haspopup="menu" aria-label="When people enter ' + NS.util.esc(stage.name) + '">' +
+      (event ? NS.util.esc(event.label) : "When") + "</button>";
     var extra = stage.kind === "awareness"
       ? '<button type="button" class="map-link" data-action="open-map">Channel map</button>'
-      : '<span class="stage-kicker">Stage ' + (index + 1) + "</span>";
+      : trigger;
     var badge = count ? '<span class="count-pill" title="People moved here from the channel map">' + count + "</span>" : "";
     return '<div class="stage-head' + (stage.kind === "awareness" ? " is-awareness" : "") + '" data-stage-id="' + stage.id + '" data-testid="' + (stage.kind === "awareness" ? "stage-awareness" : "stage") + '">' +
       tools + title + extra + badge + "</div>";
@@ -42,19 +45,15 @@
   }
 
   function renderPopover(pop) {
-    var items = RECOMMENDED.map(function (stage, index) {
-      return "<li><span>" + (index + 1) + "</span><strong>" + NS.util.esc(stage.name) + "</strong><em>" + NS.util.esc(stage.blurb) + "</em></li>";
-    }).join("");
+    var names = RECOMMENDED.map(function (stage) { return NS.util.esc(stage.name); }).join(" · ");
     pop.innerHTML = '<form id="add-stage-form">' +
-      "<label>Stage name<input name='name' maxlength='48' required placeholder='For example, Onboarding' autocomplete='off'></label>" +
+      "<label>Name<input name='name' maxlength='48' required placeholder='Name' autocomplete='off' aria-label='Stage name'></label>" +
       '<p class="form-error" data-error hidden></p>' +
-      '<button type="submit" class="btn btn-primary">Add stage</button>' +
+      '<button type="submit" class="btn btn-primary">Add</button>' +
       "</form>" +
       '<div class="popover-divider"></div>' +
-      '<p class="fine">Recommended pipeline</p>' +
-      '<ol class="recommend-list">' + items + "</ol>" +
-      '<button type="button" class="btn btn-tinted btn-block" data-action="apply-recommended" data-testid="apply-recommended">Use these 7 stages</button>' +
-      '<p class="fine">You can rename every stage after it is on the plane. A training company might rename Service to “Training & Experience”.</p>';
+      '<p class="suggest-line">' + names + "</p>" +
+      '<button type="button" class="btn btn-tinted btn-block" data-action="apply-recommended" data-testid="apply-recommended">Use these 7</button>';
   }
 
   function openPopover(anchor) {
@@ -79,6 +78,37 @@
   function closePopover() {
     var pop = document.getElementById("stage-popover");
     if (pop) pop.hidden = true;
+  }
+
+  function closeTrigger() {
+    var menu = document.getElementById("trigger-menu");
+    if (!menu) return;
+    menu.hidden = true;
+    menu.innerHTML = "";
+  }
+
+  function openTrigger(anchor) {
+    var stage = NS.model.stageById(anchor.dataset.stageId);
+    var menu = document.getElementById("trigger-menu");
+    if (!stage || !menu) return;
+    closePopover();
+    var items = '<button type="button" class="menu-item' + (stage.advanceOn ? "" : " is-on") + '" role="menuitemradio" data-action="set-trigger" data-stage-id="' + stage.id + '" data-event="" aria-checked="' + (stage.advanceOn ? "false" : "true") + '">None</button>';
+    NS.registry.stageEvents.forEach(function (event) {
+      var on = stage.advanceOn === event.id;
+      items += '<button type="button" class="menu-item' + (on ? " is-on" : "") + '" role="menuitemradio" data-action="set-trigger" data-stage-id="' + stage.id + '" data-event="' + event.id + '" aria-checked="' + (on ? "true" : "false") + '">' + NS.util.esc(event.label) + "</button>";
+    });
+    menu.innerHTML = '<div class="menu" role="menu" aria-label="Advance when">' + items + "</div>";
+    menu.hidden = false;
+    var rect = anchor.getBoundingClientRect();
+    var width = Math.min(220, window.innerWidth - 24);
+    var left = Math.max(12, Math.min(rect.left, window.innerWidth - width - 12));
+    var top = rect.bottom + 6;
+    menu.style.left = left + "px";
+    menu.style.top = top + "px";
+    menu.style.width = width + "px";
+    if (top + menu.offsetHeight > window.innerHeight - 12) {
+      menu.style.top = Math.max(12, rect.top - menu.offsetHeight - 6) + "px";
+    }
   }
 
   function showError(message) {
@@ -110,7 +140,7 @@
     }
     NS.model.applyRecommended(RECOMMENDED);
     closePopover();
-    NS.ui.toast("Recommended stages are on the plane. Rename any of them.");
+    NS.ui.toast("Stages updated.");
   }
 
   function init() {
@@ -130,6 +160,13 @@
       if (!button) return;
       applyRecommended();
     });
+    var menu = document.getElementById("trigger-menu");
+    menu.addEventListener("click", function (event) {
+      var button = event.target.closest("[data-action='set-trigger']");
+      if (!button) return;
+      NS.model.setAdvance(button.dataset.stageId, button.dataset.event || "");
+      closeTrigger();
+    });
   }
 
   NS.stages = {
@@ -138,6 +175,8 @@
     addCellHTML: addCellHTML,
     openPopover: openPopover,
     closePopover: closePopover,
+    openTrigger: openTrigger,
+    closeTrigger: closeTrigger,
     init: init
   };
 })(window.NodeCRM);

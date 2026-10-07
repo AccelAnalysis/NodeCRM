@@ -135,8 +135,8 @@
     if (!segment || (segment.audience !== "b2c" && segment.audience !== "b2b")) {
       return {
         level: "open",
-        title: "Choose people or companies",
-        detail: "People means households. Companies means someone in a role at a business."
+        title: "Choose",
+        detail: "People means households. Companies means a role at a business."
       };
     }
     var book = spec(segment.audience);
@@ -147,31 +147,31 @@
     if (!used.length && !custom) {
       return {
         level: "open",
-        title: "Not specific yet",
-        detail: "Pick a few traits you could actually search for."
+        title: "Open",
+        detail: "Pick a few traits you could search for."
       };
     }
     if (!used.length && custom) {
       return {
         level: "hard",
-        title: "Hard to find as a list",
-        detail: "Traits you invent help you remember who they are. They rarely come as a ready-made list."
+        title: "Hard to list",
+        detail: "Traits you invent are for you. They rarely come as a ready-made list."
       };
     }
     if (used.length <= 2 && !custom) {
-      return { level: "likely", title: "Likely findable", detail: book.likely };
+      return { level: "likely", title: "Findable", detail: book.likely };
     }
     if (used.length === 3 && !custom) {
       return {
         level: "narrow",
-        title: "Findable, but a smaller list",
-        detail: "You can look. The overlap of this many traits is thinner."
+        title: "Narrow",
+        detail: "You can look. This many traits makes a thinner list."
       };
     }
     return {
       level: "hard",
-      title: "Hard to find as a ready-made list",
-      detail: "This is very specific. Expect to build the list by hand, or drop a trait."
+        title: "Hard to list",
+        detail: "Very specific. Build the list by hand, or drop a trait."
     };
   }
 

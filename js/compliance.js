@@ -8,11 +8,11 @@
   var RISKS = [
     {
       re: /auto[\s-]?dial|robo[\s-]?call|predictive dial|power[\s-]?dial|automatic (call|dial|voice|text)|prerecorded|robo[\s-]?text/i,
-      why: "This wording describes automatic calling, a recorded voice, or an automatic text. Those usually need prior express written consent, and this prototype will not dial or send anything. Keep the words only as a note that a person does the step by hand."
+      why: "This describes automatic calling, a recorded voice, or an automatic text. Keep it only as a note that a person does the step by hand."
     },
     {
       re: /bought (this |the |a )?list|purchased list|scraped (list|contacts|numbers)|cold list|bought leads/i,
-      why: "A bought or scraped list is a common way to message people who never agreed. Texts and many calls need consent from the person, not just a number you acquired. Keep this note only if you are sure you still have that consent."
+      why: "A bought or scraped list is not consent. Keep this only if you still have each person's yes."
     }
   ];
 
@@ -36,13 +36,13 @@
     if (!channel || !item || !item.enabled) return "";
     var days = toDays(item.cadence);
     if (channel.id === "sms" && days < 3) {
-      return "Texting more often than every few days is easy to feel like harassment. Use a faster pace only if they asked for it.";
+      return "Texting this often needs them to have asked for it.";
     }
     if (channel.id === "phone" && days < 7) {
-      return "Calling more than weekly needs a clear reason. Keep the slower pace unless they asked you to call sooner.";
+      return "Calling this often needs them to have asked for it.";
     }
     if (channel.id === "email" && days < 2) {
-      return "Emailing every day is a lot. A slower pace is the safer default.";
+      return "Emailing every day needs them to have asked for it.";
     }
     return "";
   }
@@ -54,14 +54,26 @@
       if (check.required && !(item.checks && item.checks[check.id])) gaps.push(check.label);
     });
     var chosen = channel.actions.filter(function (action) { return item.actions && item.actions[action.id]; });
-    if (!chosen.length) gaps.push("Pick what you will actually do.");
+    if (!chosen.length) gaps.push("Pick an action");
     var card = sender(state);
-    if (channel.compliance.footer === "email" && !card.name) gaps.push("Add the name people should see as the sender.");
-    if (channel.compliance.footer === "email" && !card.postal) gaps.push("Add the physical mailing address that goes on every marketing email.");
+    if (channel.compliance.footer === "email" && !card.name) gaps.push("Add a sender name");
+    if (channel.compliance.footer === "email" && !card.postal) gaps.push("Add a mailing address");
     var pace = paceWarning(channel, item);
-    if (pace && !item.paceConfirmed) gaps.push(pace);
-    if (riskyText(item) && !item.riskConfirmed) gaps.push("Change the wording that describes automatic contact or a bought list, or confirm it is only a note.");
+    if (pace && !item.paceConfirmed) gaps.push("Confirm this pace");
+    if (riskyText(item) && !item.riskConfirmed) gaps.push("Check the wording");
     return gaps;
+  }
+
+  var CONSENT_IDS = { consent: 1, permission: 1, stop: 1 };
+
+  function status(channel, item, state) {
+    if (!item || !item.enabled) return { tone: "off", label: "", whys: [] };
+    var gaps = missing(channel, item, state);
+    if (!gaps.length) return { tone: "ok", label: "Ready", whys: [] };
+    var needsConsent = (channel.compliance.checks || []).some(function (check) {
+      return CONSENT_IDS[check.id] && check.required && !(item.checks && item.checks[check.id]);
+    });
+    return { tone: "wait", label: needsConsent ? "Needs consent" : "Not ready", whys: gaps };
   }
 
   function ready(channel, item, state) {
@@ -94,10 +106,7 @@
 
   function quietNote(channel) {
     if (!channel || !channel.compliance || !channel.compliance.quiet) return "";
-    if (channel.id === "phone") {
-      return "Call only between 8:00 a.m. and 9:00 p.m. in their time zone. This prototype does not place the call.";
-    }
-    return "Text only between 8:00 a.m. and 9:00 p.m. in their time zone. This prototype does not send the text.";
+    return "8:00 a.m.–9:00 p.m. in their time zone.";
   }
 
   function risk(text) {
@@ -129,6 +138,7 @@
     sender: sender,
     paceWarning: paceWarning,
     missing: missing,
+    status: status,
     ready: ready,
     footer: footer,
     quietNote: quietNote,

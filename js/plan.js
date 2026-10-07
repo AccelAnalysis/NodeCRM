@@ -3,47 +3,39 @@
 
   function root() { return document.getElementById("plan"); }
 
-  function lines() {
+  function open() {
     var state = NS.model.get();
-    var items = [];
-    var card = NS.compliance.sender(state);
-    if (card.name && card.postal) items.push({ level: "ok", text: "Sender card has a name and a mailing address." });
-    else items.push({ level: "wait", text: "Add your name and mailing address before any marketing email can be ready." });
-    if (!state.nodes.length) {
-      items.push({ level: "wait", text: "No steps yet. Open a circle where a person meets a stage and pick a channel." });
-    }
+    var rows = [];
+    if (!state.nodes.length) rows.push({ tone: "wait", title: "No steps", label: "Not ready", why: "" });
     state.nodes.forEach(function (node) {
-      var label = NS.model.nodeLabel(node);
-      var waiting = [];
+      var any = false;
       NS.registry.list(state).forEach(function (channel) {
         var item = node.comms[channel.id];
         if (!item || !item.enabled) return;
-        var gaps = NS.compliance.missing(channel, item, state);
-        if (gaps.length) waiting.push(channel.label + ": " + gaps[0]);
+        any = true;
+        var st = NS.compliance.status(channel, item, state);
+        rows.push({
+          tone: st.tone === "ok" ? "ok" : "wait",
+          title: NS.model.nodeLabel(node) + " · " + channel.label,
+          label: st.label,
+          why: st.whys.join(" · ")
+        });
       });
-      var enabled = NS.registry.list(state).some(function (channel) {
-        return node.comms[channel.id] && node.comms[channel.id].enabled;
-      });
-      if (!enabled) items.push({ level: "wait", text: label + " — pick a channel." });
-      else if (!waiting.length) items.push({ level: "ok", text: label + " — checklist complete." });
-      else items.push({ level: "wait", text: label + " — " + waiting[0] });
+      if (!any) rows.push({ tone: "wait", title: NS.model.nodeLabel(node), label: "No channel", why: "" });
     });
-    var dnc = state.awareness.people.filter(function (person) { return person.status === "opted_out"; });
-    if (dnc.length) items.push({ level: "ok", text: dnc.length + " " + (dnc.length === 1 ? "person is" : "people are") + " on Do not contact, so they stay off every message." });
-    else items.push({ level: "ok", text: "Do not contact is empty. When someone asks to stop, mark them on the channel map." });
-    return items;
-  }
-
-  function open() {
-    var body = lines().map(function (item) {
-      return '<li class="plan-line is-' + item.level + '">' + NS.util.esc(item.text) + "</li>";
+    var dnc = state.awareness.people.filter(function (person) { return person.status === "opted_out"; }).length;
+    if (dnc) rows.push({ tone: "ok", title: "Do not contact", label: String(dnc), why: "" });
+    var body = rows.map(function (row) {
+      var why = row.why
+        ? '<details class="disclosure is-quiet"><summary>Why?</summary><div class="disclosure-body"><p class="why-line">' + NS.util.esc(row.why) + "</p></div></details>"
+        : "";
+      return '<li class="plan-row"><span>' + NS.util.esc(row.title) + '</span><span class="status-pill is-' + row.tone + '">' + NS.util.esc(row.label) + "</span>" + why + "</li>";
     }).join("");
     root().innerHTML = '<div class="modal plan-sheet" role="dialog" aria-modal="true" aria-labelledby="plan-title">' +
       '<div class="sheet-grabber" aria-hidden="true"></div>' +
-      '<h2 id="plan-title">Check the plan</h2>' +
-      '<p>Walk the list. A step is ready only when its checklist is done. Nothing here is sent.</p>' +
+      '<h2 id="plan-title">Plan</h2>' +
       '<ul class="plan-list">' + body + "</ul>" +
-      '<p class="legal-note">' + NS.util.esc(NS.compliance.DISCLAIMER) + "</p>" +
+      '<details class="disclosure is-quiet"><summary>Not legal advice</summary><div class="disclosure-body"><p class="why-line">' + NS.util.esc(NS.compliance.DISCLAIMER) + "</p></div></details>" +
       '<div class="modal-actions"><button type="button" class="btn btn-primary" data-action="close-plan">Done</button></div></div>';
     root().hidden = false;
     var done = root().querySelector("[data-action='close-plan']");

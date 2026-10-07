@@ -1,25 +1,74 @@
+/* Apple HIG, dark-first: clarity (type scale), deference (quiet materials), depth (elevation). */
 :root {
-  --bg: #1b2834;
-  --bg-raise: #243646;
-  --bg-raise-2: #2d4256;
-  --ink: #071015;
-  --text: #e7eef5;
-  --muted: #9eb2c4;
-  --faint: #7d93a6;
-  --teal: #8fd0c6;
-  --teal-2: #d7f6f1;
-  --teal-deep: #1e6d66;
-  --gold: #e4c27a;
-  --gold-ink: #2a2110;
-  --coral: #e09a90;
-  --danger: #e09a90;
-  --line: rgba(231, 238, 245, 0.14);
-  --shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
-  --persona-w: 288px;
-  --stage-w: 200px;
-  --font: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
-  --mono: ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, monospace;
   color-scheme: dark;
+
+  --canvas: #161d27;
+  --canvas-deep: #10161d;
+
+  --label: #f5f5f7;
+  --label-secondary: #c7ced6;
+  --label-tertiary: #8e98a3;
+  --label-quaternary: rgba(235, 235, 245, 0.28);
+
+  --fill: rgba(120, 128, 140, 0.24);
+  --fill-secondary: rgba(120, 128, 140, 0.16);
+  --fill-tertiary: rgba(118, 128, 140, 0.1);
+
+  --glass: rgba(32, 40, 52, 0.72);
+  --glass-thick: rgba(24, 30, 40, 0.9);
+  --glass-stroke: rgba(255, 255, 255, 0.14);
+  --separator: rgba(255, 255, 255, 0.1);
+
+  --accent: #7dcec4;
+  --accent-bright: #e7faf6;
+  --accent-ink: #062421;
+  --accent-deep: #1a5c56;
+
+  --gold: #e8c98a;
+  --gold-ink: #2a2110;
+  --destructive: #ff6961;
+
+  --shadow-1: 0 1px 1px rgba(0, 0, 0, 0.2), 0 10px 28px rgba(0, 0, 0, 0.28);
+  --shadow-2: 0 18px 50px rgba(0, 0, 0, 0.42), 0 2px 8px rgba(0, 0, 0, 0.24);
+  --shadow-node: 0 10px 22px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+
+  --text-title1: 1.75rem;
+  --text-title2: 1.375rem;
+  --text-title3: 1.25rem;
+  --text-headline: 1.0625rem;
+  --text-body: 1.0625rem;
+  --text-callout: 1rem;
+  --text-subhead: 0.9375rem;
+  --text-footnote: 0.8125rem;
+  --text-caption: 0.75rem;
+
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --spring: cubic-bezier(0.22, 1.12, 0.36, 1);
+  --dur-fast: 200ms;
+  --dur: 280ms;
+  --dur-sheet: 320ms;
+
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 22px;
+  --r-xl: 28px;
+  --r-pill: 980px;
+
+  --persona-w: 304px;
+  --stage-w: 188px;
+  --stick-top: 78px;
+  --grid-pad-top: 86px;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
 }
 
 * { box-sizing: border-box; }
@@ -28,33 +77,61 @@ html, body { height: 100%; }
 
 body {
   margin: 0;
-  color: var(--text);
+  color: var(--label);
   font-family: var(--font);
-  font-size: 15px;
-  line-height: 1.45;
-  background-color: var(--bg);
+  font-size: var(--text-body);
+  line-height: 1.35;
+  letter-spacing: -0.011em;
+  background-color: var(--canvas);
   background-image: url("../assets/stipple.svg");
   background-attachment: fixed;
+  background-size: 144px 144px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 [hidden] { display: none !important; }
 
-button, input, select, textarea { font: inherit; color: inherit; }
+button, input, select, textarea { font: inherit; color: inherit; letter-spacing: inherit; }
 
 button { cursor: pointer; }
 
-button:disabled { cursor: not-allowed; opacity: 0.45; }
+button:disabled { cursor: not-allowed; opacity: 0.38; }
 
 :focus-visible {
-  outline: 2px solid var(--teal);
-  outline-offset: 2px;
+  outline: 2px solid var(--accent-bright);
+  outline-offset: 3px;
 }
 
-::selection { background: #1e6d66; color: #fff; }
+::selection { background: #1a5c56; color: #fff; }
 
-@media (max-width: 720px) {
+::placeholder { color: var(--label-tertiary); }
+
+@media (max-width: 800px) {
   :root {
-    --persona-w: 230px;
-    --stage-w: 168px;
+    --persona-w: 236px;
+    --stage-w: 164px;
+    --stick-top: 0px;
+    --grid-pad-top: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 1ms;
+    --dur: 160ms;
+    --dur-sheet: 160ms;
+    --ease: linear;
+    --spring: linear;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --label-secondary: #e6e8ec;
+    --label-tertiary: #c5ccd4;
+    --separator: rgba(255, 255, 255, 0.32);
+    --glass-stroke: rgba(255, 255, 255, 0.4);
+    --accent: #b6f3ea;
   }
 }

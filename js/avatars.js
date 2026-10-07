@@ -1,9 +1,9 @@
 (function (NS) {
   "use strict";
 
-  var SKINS = ["#F6E2D3", "#E7C2A4", "#C98A62", "#8D5A3C", "#5C3A28", "#3B2418"];
-  var HAIRS = ["#1C1A19", "#3A2A22", "#6A3A2A", "#C4552A", "#D6B36A", "#8E8F92", "#243044"];
-  var SHIRTS = ["#1F6A64", "#2E5A78", "#8A4E3B", "#3E5C45", "#6A5378", "#8A6A32"];
+  var SKINS = ["#F3E4D8", "#E6C6AE", "#C99578", "#8C6048", "#5C4034", "#3E2C24"];
+  var HAIRS = ["#2C2826", "#4A3A30", "#6B4534", "#A15E40", "#C4A56E", "#8A8C90", "#2C3848"];
+  var SHIRTS = ["#3C6E68", "#3E5870", "#6A5348", "#445C4C", "#5A5168", "#6A5C42"];
 
   function rng(seed) {
     var x = (Number(seed) || 1) >>> 0 || 1;
@@ -46,25 +46,25 @@
       ? '<g fill="none" stroke="#1c242c" stroke-width="1.5"><circle cx="33" cy="44" r="5.3"/><circle cx="47" cy="44" r="5.3"/><path d="M38.2 44 H41.8"/></g>'
       : "";
     return '<svg class="avatar-svg" viewBox="0 0 80 96" aria-hidden="true" style="--blink:' + blink + 's;--breath:' + breath + 's;--phase:' + phase + 's">' +
-      '<ellipse cx="40" cy="91" rx="18" ry="3" fill="#05070a" opacity="0.3"/>' +
+      '<ellipse cx="40" cy="92" rx="16" ry="2.4" fill="#05070a" opacity="0.18"/>' +
       '<g class="sway"><g class="breathe">' +
-      '<path d="M16 78 Q40 64 64 78 L68 96 H12 Z" fill="' + shirt + '"/>' +
-      '<rect x="35" y="60" width="10" height="12" rx="3" fill="' + skin + '"/>' +
+      '<path d="M18 78 Q40 66 62 78 L66 96 H14 Z" fill="' + shirt + '"/>' +
+      '<rect x="36" y="62" width="8" height="10" rx="3" fill="' + skin + '"/>' +
       hairBack(style, hair) +
-      '<ellipse cx="40" cy="43" rx="17" ry="19" fill="' + skin + '"/>' +
-      '<ellipse cx="22.5" cy="45" rx="3.1" ry="4" fill="' + skin + '"/>' +
-      '<ellipse cx="57.5" cy="45" rx="3.1" ry="4" fill="' + skin + '"/>' +
+      '<ellipse cx="40" cy="44" rx="16.2" ry="18.2" fill="' + skin + '"/>' +
+      '<ellipse cx="23.2" cy="46" rx="2.6" ry="3.4" fill="' + skin + '"/>' +
+      '<ellipse cx="56.8" cy="46" rx="2.6" ry="3.4" fill="' + skin + '"/>' +
       hairFront(style, hair) +
-      '<ellipse cx="29" cy="51" rx="3.2" ry="1.5" fill="#e09a90" opacity="0.35"/>' +
-      '<ellipse cx="51" cy="51" rx="3.2" ry="1.5" fill="#e09a90" opacity="0.35"/>' +
+      '<ellipse cx="30" cy="52" rx="2.4" ry="1.1" fill="#c48b84" opacity="0.16"/>' +
+      '<ellipse cx="50" cy="52" rx="2.4" ry="1.1" fill="#c48b84" opacity="0.16"/>' +
       '<g class="blink">' +
-      '<ellipse cx="33" cy="44" rx="2.05" ry="2.45" fill="#1a1714"/>' +
-      '<ellipse cx="47" cy="44" rx="2.05" ry="2.45" fill="#1a1714"/>' +
-      '<circle cx="33.7" cy="43.2" r="0.65" fill="#fff"/>' +
-      '<circle cx="47.7" cy="43.2" r="0.65" fill="#fff"/>' +
+      '<ellipse cx="33.2" cy="45" rx="1.7" ry="2.05" fill="#1c1916"/>' +
+      '<ellipse cx="46.8" cy="45" rx="1.7" ry="2.05" fill="#1c1916"/>' +
+      '<circle cx="33.7" cy="44.3" r="0.45" fill="#fff" opacity="0.85"/>' +
+      '<circle cx="47.3" cy="44.3" r="0.45" fill="#fff" opacity="0.85"/>' +
       "</g>" +
       glassesSvg +
-      '<path d="M34 52.5 Q40 ' + (52.5 + Number(smile)) + ' 46 52.5" fill="none" stroke="#6a3a38" stroke-width="1.35" stroke-linecap="round"/>' +
+      '<path d="M35 53.2 Q40 ' + (52.6 + Number(smile) * 0.72) + ' 45 53.2" fill="none" stroke="#6d403c" stroke-width="1.15" stroke-linecap="round"/>' +
       "</g></g></svg>";
   }
 

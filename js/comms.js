@@ -22,7 +22,7 @@
   function openAfterMotion(id) {
     clearTimeout(timer);
     var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    timer = setTimeout(function () { open(id); }, reduce ? 0 : 680);
+    timer = setTimeout(function () { open(id); }, reduce ? 180 : 460);
   }
 
   function close() {
@@ -53,10 +53,12 @@
     }).join("");
     var cadenceHot = emphasize === "cadence" ? " is-hot" : "";
     return '<section class="channel-block' + (item.enabled ? "" : " is-off") + '" data-channel="' + channel.id + '">' +
-      '<header><label class="check"><input type="checkbox" data-field="enabled"' + (item.enabled ? " checked" : "") + "> " + NS.util.esc(channel.label) + "</label></header>" +
+      '<header><label class="switch"><input type="checkbox" data-field="enabled"' + (item.enabled ? " checked" : "") + ">" +
+      '<span class="switch-track" aria-hidden="true"></span><span>' + NS.util.esc(channel.label) + "</span></label></header>" +
+      '<div class="channel-details">' +
       (channel.hint ? '<p class="fine">' + NS.util.esc(channel.hint) + "</p>" : "") +
       '<div class="cadence' + cadenceHot + '"><span>Every</span><input data-field="interval" type="number" min="1" max="365" value="' + item.cadence.interval + '"><select data-field="unit">' + units + "</select></div>" +
-      fields + "</section>";
+      fields + "</div></section>";
   }
 
   function pickerHTML() {
@@ -93,29 +95,29 @@
       return channelBlock(node, channel, emphasize);
     }).join("");
     root().innerHTML = '<div class="scrim" data-action="close-comms"></div>' +
-      '<form class="drawer-panel" id="comms-form" data-testid="comms-panel">' +
-      '<header class="drawer-head"><div><p class="fine" id="comms-kicker">' + NS.util.esc(persona ? persona.name : "Persona") + " · " + NS.util.esc(stage ? stage.name : "Stage") + "</p>" +
-      "<h2>Communications</h2><p class='fine' id='comms-summary'>" + NS.util.esc(NS.model.summary(node)) + "</p></div>" +
-      '<button type="button" class="icon-btn" data-action="close-comms" aria-label="Close">×</button></header>' +
+      '<form class="drawer-panel" id="comms-form" data-testid="comms-panel" role="dialog" aria-modal="true" aria-labelledby="comms-title">' +
+      '<header class="drawer-head"><div><p class="caption" id="comms-kicker">' + NS.util.esc(persona ? persona.name : "Persona") + " · " + NS.util.esc(stage ? stage.name : "Stage") + "</p>" +
+      '<h2 id="comms-title">Communications</h2><p class="fine" id="comms-summary">' + NS.util.esc(NS.model.summary(node)) + "</p></div>" +
+      '<button type="button" class="icon-btn" data-action="close-comms" aria-label="Close">' + NS.util.icon("close") + "</button></header>" +
       '<div class="drawer-scroll">' +
       '<div class="mode-switch" role="radiogroup" aria-label="Node type">' + modes + "</div>" +
       '<p class="fine" id="mode-hint">' + NS.util.esc(modeHint(node.mode)) + "</p>" +
       '<label id="exit-label">' + (node.mode === "cycle" ? "Stays until" : "Completed when") +
       '<input data-field="exitAction" type="text" maxlength="120" value="' + NS.util.esc(node.exitAction) + '" placeholder="' + (node.mode === "cycle" ? "They buy, book, or ask to stop" : "The sequence has been sent") + '"></label>' +
-      '<div class="action-row">' +
-      '<button type="button" class="btn" data-action="act-clone">Clone another node</button>' +
-      '<button type="button" class="btn" data-action="act-copy">Keep copy, change cadence</button>' +
-      '<button type="button" class="btn" data-action="act-cadence">Keep cadence, change copy</button>' +
-      '<button type="button" class="btn" data-action="act-rebuild">Rebuild</button>' +
-      '<button type="button" class="btn" data-action="act-template">Use template</button>' +
-      "</div>" +
-      '<p class="fine">Reuse a node from a similar persona, in whole or in part.</p>' +
+      '<div><p class="group-label">Start from</p><div class="group-list">' +
+      '<button type="button" class="group-row" data-action="act-clone"><span>Clone another node</span><span class="chev" aria-hidden="true">' + NS.util.icon("chevron") + "</span></button>" +
+      '<button type="button" class="group-row" data-action="act-copy"><span>Keep copy, change cadence</span><span class="chev" aria-hidden="true">' + NS.util.icon("chevron") + "</span></button>" +
+      '<button type="button" class="group-row" data-action="act-cadence"><span>Keep cadence, change copy</span><span class="chev" aria-hidden="true">' + NS.util.icon("chevron") + "</span></button>" +
+      '<button type="button" class="group-row" data-action="act-template"><span>Use a template</span><span class="chev" aria-hidden="true">' + NS.util.icon("chevron") + "</span></button>" +
+      '<button type="button" class="group-row" data-action="act-rebuild"><span>Rebuild</span></button>' +
+      "</div></div>" +
       pickerHTML() +
       channels +
-      '<div class="save-template"><label>Save this node as a template<input id="template-name" maxlength="48" placeholder="Template name"></label>' +
-      '<button type="button" class="btn" data-action="save-template">Save template</button></div>' +
+      '<details class="disclosure"><summary>Save as template</summary><div class="disclosure-body">' +
+      '<label>Template name<input id="template-name" maxlength="48" placeholder="Name"></label>' +
+      '<button type="button" class="btn btn-tinted" data-action="save-template">Save template</button></div></details>' +
       "</div>" +
-      '<footer class="drawer-foot"><button type="button" class="btn btn-danger" data-action="delete-node">Delete node</button></footer>' +
+      '<footer class="drawer-foot"><button type="button" class="btn btn-danger btn-block" data-action="delete-node">Delete node</button></footer>' +
       "</form>";
     if (emphasize) {
       var hot = root().querySelector(".is-hot input, .is-hot textarea, .is-hot select");

@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#161d27">
+  <meta name="description" content="NodeCRM is a calm communications plane. Stages across, personas down, a node where they meet.">
   <title>NodeCRM</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/tokens.css">
@@ -15,27 +18,31 @@
   <link rel="stylesheet" href="css/channels.css">
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <span class="brand-mark" aria-hidden="true"></span>
-      <div>
-        <div class="brand-name">NodeCRM</div>
-        <div class="brand-sub" id="market-label">No market yet</div>
+  <div class="app">
+    <header class="toolbar">
+      <div class="toolbar-glass">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <div class="brand-copy">
+            <h1 class="brand-name">NodeCRM</h1>
+            <p class="brand-sub" id="market-label">No market yet</p>
+          </div>
+        </div>
+        <div class="toolbar-actions" role="toolbar" aria-label="Workspace">
+          <span class="save-pill" id="save-pill" hidden title="Saved in this browser">Saved</span>
+          <button type="button" class="btn btn-plain" data-action="sample">Sample market</button>
+          <button type="button" class="btn btn-tinted" data-action="open-wizard" id="btn-personas" hidden>Edit market</button>
+          <button type="button" class="btn btn-plain" data-action="reset">Reset</button>
+        </div>
       </div>
-    </div>
-    <div class="top-actions">
-      <span class="save-pill" id="save-pill" hidden>Saved in this browser</span>
-      <button type="button" class="btn btn-ghost" data-action="sample">Sample market</button>
-      <button type="button" class="btn btn-ghost" data-action="open-wizard" id="btn-personas" hidden>Edit market</button>
-      <button type="button" class="btn btn-ghost" data-action="reset">Reset</button>
-    </div>
-  </header>
-  <main class="plane">
-    <div class="plane-scroll" id="plane-scroll">
-      <div class="grid" id="grid"></div>
-    </div>
-  </main>
-  <div id="stage-popover" class="popover" hidden></div>
+    </header>
+    <main class="plane" aria-label="Communications plane">
+      <div class="plane-scroll" id="plane-scroll">
+        <div class="grid" id="grid"></div>
+      </div>
+    </main>
+  </div>
+  <div id="stage-popover" class="popover" role="dialog" aria-label="Add a stage" hidden></div>
   <div id="wizard" class="overlay" data-testid="wizard" hidden></div>
   <div id="comms" data-testid="comms" hidden></div>
   <section id="channel-map" class="channel-map" data-testid="channel-map" hidden></section>

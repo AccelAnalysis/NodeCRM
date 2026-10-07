@@ -14,7 +14,7 @@
   ];
 
   function pencil() {
-    return '<svg class="mini-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 12.5 V14 h1.5 L12 5.5 10.5 4 Z" fill="currentColor"/><path d="M11.2 3.2 12.8 4.8 13.8 3.8 12.2 2.2 Z" fill="currentColor"/></svg>';
+    return NS.util.icon("edit");
   }
 
   function headerHTML(stage, index, editing) {
@@ -22,9 +22,9 @@
     var tools = "";
     if (stage.kind !== "awareness") {
       tools = '<div class="stage-tools">' +
-        '<button type="button" class="icon-btn" data-action="move-stage" data-stage-id="' + stage.id + '" data-dir="-1" aria-label="Move ' + NS.util.esc(stage.name) + ' left"' + (index <= 1 ? " disabled" : "") + '>‹</button>' +
-        '<button type="button" class="icon-btn" data-action="move-stage" data-stage-id="' + stage.id + '" data-dir="1" aria-label="Move ' + NS.util.esc(stage.name) + ' right"' + (index === NS.model.get().stages.length - 1 ? " disabled" : "") + '>›</button>' +
-        '<button type="button" class="icon-btn" data-action="remove-stage" data-stage-id="' + stage.id + '" aria-label="Remove ' + NS.util.esc(stage.name) + '">×</button>' +
+        '<button type="button" class="icon-btn" data-action="move-stage" data-stage-id="' + stage.id + '" data-dir="-1" aria-label="Move ' + NS.util.esc(stage.name) + ' left"' + (index <= 1 ? " disabled" : "") + ">" + NS.util.icon("left") + "</button>" +
+        '<button type="button" class="icon-btn" data-action="move-stage" data-stage-id="' + stage.id + '" data-dir="1" aria-label="Move ' + NS.util.esc(stage.name) + ' right"' + (index === NS.model.get().stages.length - 1 ? " disabled" : "") + ">" + NS.util.icon("right") + "</button>" +
+        '<button type="button" class="icon-btn" data-action="remove-stage" data-stage-id="' + stage.id + '" aria-label="Remove ' + NS.util.esc(stage.name) + '">' + NS.util.icon("close") + "</button>" +
         "</div>";
     }
     var title = '<button type="button" class="stage-title" data-action="rename-stage" data-stage-id="' + stage.id + '" aria-label="Rename ' + NS.util.esc(stage.name) + '">' +
@@ -38,7 +38,7 @@
   }
 
   function addCellHTML() {
-    return '<div class="stage-add"><button type="button" class="add-stage" data-action="add-stage" data-testid="add-stage" aria-label="Add stage">+</button></div>';
+    return '<div class="stage-add"><button type="button" class="add-stage" data-action="add-stage" data-testid="add-stage" aria-label="Add stage">' + NS.util.icon("plus") + "</button></div>";
   }
 
   function renderPopover(pop) {
@@ -53,7 +53,7 @@
       '<div class="popover-divider"></div>' +
       '<p class="fine">Recommended pipeline</p>' +
       '<ol class="recommend-list">' + items + "</ol>" +
-      '<button type="button" class="btn btn-primary" data-action="apply-recommended" data-testid="apply-recommended">Use these 7 stages</button>' +
+      '<button type="button" class="btn btn-tinted btn-block" data-action="apply-recommended" data-testid="apply-recommended">Use these 7 stages</button>' +
       '<p class="fine">You can rename every stage after it is on the plane. A training company might rename Service to “Training & Experience”.</p>';
   }
 
@@ -62,11 +62,16 @@
     renderPopover(pop);
     pop.hidden = false;
     var rect = anchor.getBoundingClientRect();
-    var width = 320;
+    var width = Math.min(340, window.innerWidth - 24);
     var left = Math.max(12, Math.min(rect.left, window.innerWidth - width - 12));
-    var top = Math.min(rect.bottom + 8, window.innerHeight - 80);
+    var top = rect.bottom + 8;
     pop.style.left = left + "px";
     pop.style.top = top + "px";
+    var popHeight = pop.offsetHeight;
+    if (top + popHeight > window.innerHeight - 12) {
+      top = Math.max(12, rect.top - popHeight - 8);
+      pop.style.top = top + "px";
+    }
     var input = pop.querySelector("input");
     if (input) input.focus();
   }

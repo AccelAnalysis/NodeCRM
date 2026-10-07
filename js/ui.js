@@ -28,6 +28,7 @@
     var root = document.getElementById("confirm");
     root.hidden = false;
     root.innerHTML = '<div class="modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title">' +
+      '<div class="sheet-grabber" aria-hidden="true"></div>' +
       '<h2 id="confirm-title">' + NS.util.esc(options.title) + "</h2>" +
       "<p>" + NS.util.esc(options.body) + "</p>" +
       '<div class="modal-actions">' +

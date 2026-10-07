@@ -129,13 +129,15 @@
       var cls = "map-node";
       if (ui.selected === channel.id) cls += " is-selected";
       if (ui.wireFrom === channel.id) cls += " is-source";
-      return '<div class="' + cls + '" role="button" tabindex="0" data-channel-id="' + channel.id + '" style="left:' + channel.x + "%;top:" + channel.y + '%">' +
+      var pressed = ui.selected === channel.id || ui.wireFrom === channel.id;
+      return '<div class="' + cls + '" role="button" tabindex="0" aria-pressed="' + (pressed ? "true" : "false") + '" aria-label="' + NS.util.esc(kindLabel(channel.kind) + ", " + channel.name) + '" data-channel-id="' + channel.id + '" style="left:' + channel.x + "%;top:" + channel.y + '%">' +
         '<span>' + NS.util.esc(kindLabel(channel.kind)) + "</span><strong>" + NS.util.esc(channel.name) + "</strong></div>";
     }).join("");
     var wireLabel = ui.wire ? "Wiring on" : "Wire channels";
     var wireExtra = ui.selectedWire ? '<button type="button" class="btn btn-danger" data-action="remove-wire" data-wire-id="' + ui.selectedWire + '">Remove wire</button>' : "";
-    root().innerHTML = '<header class="map-head"><button type="button" class="btn" data-action="close-map">Back to plane</button>' +
-      "<div><h2>" + NS.util.esc(stage.name) + ' channel map</h2><p class="fine">Add channels and wire how attention moves. Leads become contacts. Contacts can move to the next stage.</p></div></header>' +
+    root().innerHTML = '<div class="map-sheet" role="dialog" aria-modal="true" aria-labelledby="map-title">' +
+      '<header class="map-head"><button type="button" class="btn btn-plain" data-action="close-map">Done</button>' +
+      '<div class="map-title-block"><h2 id="map-title">' + NS.util.esc(stage.name) + '</h2><p class="fine">Add channels and wire how attention moves. Leads become contacts, then move to the next stage.</p></div></header>' +
       '<div class="map-toolbar"><form id="channel-form"><input name="name" maxlength="40" required placeholder="Channel name" aria-label="Channel name"><select name="kind" aria-label="Channel kind">' + kinds + "</select>" +
       '<button type="submit" class="btn btn-primary">Add channel</button></form>' +
       '<button type="button" class="btn' + (ui.wire ? " is-on" : "") + '" data-action="toggle-wire" aria-pressed="' + (ui.wire ? "true" : "false") + '" data-testid="wire-toggle">' + wireLabel + "</button>" +
@@ -144,7 +146,7 @@
       '<svg id="map-wires" class="map-wires"></svg>' + nodes +
       (nodes ? "" : '<p class="map-empty">Add a channel to start the map.</p>') +
       '</div><div class="map-inspector" id="map-inspector">' + inspectorHTML() + "</div></div>" +
-      '<aside class="people-pane">' + peopleHTML() + "</aside></div>";
+      '<aside class="people-pane" aria-label="Leads and contacts">' + peopleHTML() + "</aside></div></div>";
     redrawWires();
   }
 
@@ -184,6 +186,30 @@
     redrawWires();
   }
 
+  function activateChannel(id) {
+    if (ui.wire) {
+      if (!ui.wireFrom) {
+        ui.wireFrom = id;
+        ui.selected = id;
+        render();
+        return;
+      }
+      if (ui.wireFrom === id) {
+        ui.wireFrom = null;
+        render();
+        return;
+      }
+      var from = ui.wireFrom;
+      ui.wireFrom = null;
+      var result = NS.model.addWire(from, id);
+      if (!result.ok) NS.ui.toast(result.error);
+      return;
+    }
+    ui.selected = id;
+    ui.selectedWire = null;
+    render();
+  }
+
   function onUp() {
     if (!ui.drag) return;
     var drag = ui.drag;
@@ -193,27 +219,7 @@
       NS.model.updateChannel(drag.id, { x: drag.x, y: drag.y });
       return;
     }
-    if (ui.wire) {
-      if (!ui.wireFrom) {
-        ui.wireFrom = drag.id;
-        ui.selected = drag.id;
-        render();
-        return;
-      }
-      if (ui.wireFrom === drag.id) {
-        ui.wireFrom = null;
-        render();
-        return;
-      }
-      var from = ui.wireFrom;
-      ui.wireFrom = null;
-      var result = NS.model.addWire(from, drag.id);
-      if (!result.ok) NS.ui.toast(result.error);
-      return;
-    }
-    ui.selected = drag.id;
-    ui.selectedWire = null;
-    render();
+    activateChannel(drag.id);
   }
 
   function init() {
@@ -251,7 +257,18 @@
         NS.model.assignPersona(event.target.dataset.personId, event.target.value);
       }
     });
+    node.addEventListener("keydown", function (event) {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      var mapNode = event.target.closest(".map-node");
+      if (!mapNode || !node.contains(mapNode)) return;
+      event.preventDefault();
+      activateChannel(mapNode.dataset.channelId);
+    });
     node.addEventListener("click", function (event) {
+      if (event.target === node) {
+        close();
+        return;
+      }
       var button = event.target.closest("[data-action]");
       if (!button) return;
       var action = button.dataset.action;

@@ -2,7 +2,7 @@
   "use strict";
 
   function dotColor(id) {
-    return { email: "#8fd0c6", sms: "#e4c27a", mail: "#e0b4a6", call: "#b7c7f2" }[id] || "#9eb2c4";
+    return { email: "#7dcec4", sms: "#e8c98a", mail: "#e7b1a4", call: "#a9c0f5" }[id] || "#8e98a3";
   }
 
   function modeMark(mode) {
@@ -19,18 +19,19 @@
       return '<i style="background:' + dotColor(ch.id) + '" title="' + NS.util.esc(ch.label) + '"></i>';
     }).join("");
     return '<span class="bubble-mode">' + modeMark(node.mode) + "</span>" +
-      (dots ? '<span class="bubble-dots">' + dots + "</span>" : "");
+      (dots ? '<span class="bubble-dots" aria-hidden="true">' + dots + "</span>" : "");
   }
 
   function cellHTML(persona, stage, animateId) {
     var node = NS.model.nodeAt(persona.id, stage.id);
     if (!node) {
-      return '<div class="cell"><button type="button" class="bubble is-empty" data-action="create-node" data-testid="node-empty" data-persona-id="' + persona.id + '" data-stage-id="' + stage.id + '" aria-label="Create node for ' + NS.util.esc(persona.name) + " at " + NS.util.esc(stage.name) + '">+</button></div>';
+      return '<div class="cell"><button type="button" class="bubble is-empty" data-action="create-node" data-testid="node-empty" data-persona-id="' + persona.id + '" data-stage-id="' + stage.id + '" aria-label="Create node for ' + NS.util.esc(persona.name) + " at " + NS.util.esc(stage.name) + '">' + NS.util.icon("plus") + "</button></div>";
     }
     var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    var fresh = node.id === animateId && !reduce ? " is-new" : "";
+    var fresh = node.id === animateId ? (reduce ? " is-fade" : " is-new") : "";
     var configured = NS.model.isConfigured(node) ? " is-set" : "";
-    return '<div class="cell"><button type="button" class="bubble is-filled' + configured + fresh + '" data-action="open-node" data-testid="node" data-node-id="' + node.id + '" data-persona-id="' + persona.id + '" data-stage-id="' + stage.id + '" aria-label="' + NS.util.esc(NS.model.nodeLabel(node)) + '" title="' + NS.util.esc(NS.model.summary(node)) + '">' + bubbleInner(node) + "</button></div>";
+    var label = NS.model.nodeLabel(node) + ". " + NS.model.summary(node);
+    return '<div class="cell"><button type="button" class="bubble is-filled' + configured + fresh + '" data-action="open-node" data-testid="node" data-node-id="' + node.id + '" data-persona-id="' + persona.id + '" data-stage-id="' + stage.id + '" aria-label="' + NS.util.esc(label) + '">' + bubbleInner(node) + "</button></div>";
   }
 
   function box(el, ancestor) {
@@ -91,7 +92,7 @@
     if (!button || !node) return;
     button.classList.toggle("is-set", NS.model.isConfigured(node));
     button.classList.remove("is-new");
-    button.title = NS.model.summary(node);
+    button.setAttribute("aria-label", NS.model.nodeLabel(node) + ". " + NS.model.summary(node));
     button.innerHTML = bubbleInner(node);
   }
 

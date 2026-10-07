@@ -1,0 +1,42 @@
+.wizard-card {
+  width: min(760px, 100%);
+  max-height: min(88vh, 820px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 16px 12px;
+  border-radius: 18px;
+  background: #1c2b39;
+  box-shadow: var(--shadow);
+}
+
+.wizard-head, .wizard-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.wizard-body { overflow: auto; padding-right: 4px; display: flex; flex-direction: column; gap: 12px; }
+
+.steps { display: flex; gap: 8px; list-style: none; margin: 0; padding: 0; flex-wrap: wrap; }
+.steps li { display: flex; align-items: center; gap: 6px; color: var(--faint); font-size: 13px; }
+.steps span {
+  width: 20px; height: 20px; border-radius: 50%;
+  display: inline-grid; place-items: center;
+  background: #14202b; font-size: 12px;
+}
+.steps .is-on { color: var(--text); }
+.steps .is-on span, .steps .is-done span { background: var(--teal-deep); color: var(--teal-2); }
+
+.edit-row { display: flex; gap: 6px; align-items: center; }
+.edit-row input { flex: 1; }
+
+.segment-block { display: flex; flex-direction: column; gap: 8px; }
+.segment-block header, .segment-block h3 { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 0; }
+
+.persona-editor {
+  display: flex;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 14px;
+  background: rgba(10, 16, 22, 0.28);
+}
+
+.persona-fields { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+
+.review-person { display: flex; gap: 10px; align-items: center; margin: 8px 0; }

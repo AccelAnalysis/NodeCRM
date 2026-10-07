@@ -1,0 +1,89 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(7, 12, 16, 0.62);
+}
+
+#confirm { z-index: 80; }
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  z-index: 90;
+  max-width: min(520px, calc(100% - 24px));
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: #102028;
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+
+.popover {
+  position: fixed;
+  z-index: 35;
+  width: min(340px, calc(100vw - 24px));
+  max-height: min(78vh, 640px);
+  overflow: auto;
+  padding: 14px;
+  border-radius: 16px;
+  background: #1d2c3a;
+  box-shadow: var(--shadow);
+}
+
+.popover label, .wizard-card label, .drawer-panel label, .map-inspector label, .lead-form label, .person-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.popover input, .wizard-card input, .wizard-card textarea, .drawer-panel input, .drawer-panel textarea, .drawer-panel select,
+.map-toolbar input, .map-toolbar select, .map-inspector input, .map-inspector select, .lead-form input, .lead-form select, .person-card select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #14202b;
+  padding: 8px 10px;
+  color: var(--text);
+}
+
+.popover-divider { height: 1px; background: var(--line); margin: 14px 0; }
+
+.recommend-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.recommend-list li { display: grid; grid-template-columns: 18px 1fr; column-gap: 8px; }
+.recommend-list span { color: var(--faint); }
+.recommend-list strong { font-weight: 640; }
+.recommend-list em { grid-column: 2; color: var(--faint); font-style: normal; font-size: 12px; }
+
+.form-error { color: var(--coral); min-height: 1.2em; margin: 8px 0; }
+
+.modal {
+  width: min(440px, 100%);
+  padding: 18px;
+  border-radius: 16px;
+  background: #1d2c3a;
+  box-shadow: var(--shadow);
+}
+
+.modal h2, .wizard-head h2, .drawer-head h2, .map-head h2 { margin: 0; letter-spacing: -0.03em; }
+.modal p { color: var(--muted); }
+.modal-actions, .wizard-foot, .drawer-foot { display: flex; justify-content: flex-end; gap: 8px; }
+
+.check { flex-direction: row !important; align-items: center; gap: 8px; color: var(--text) !important; }
+.check input { width: auto; }

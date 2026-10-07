@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NodeCRM</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/plane.css">
+  <link rel="stylesheet" href="css/avatars.css">
+  <link rel="stylesheet" href="css/ui.css">
+  <link rel="stylesheet" href="css/wizard.css">
+  <link rel="stylesheet" href="css/comms.css">
+  <link rel="stylesheet" href="css/channels.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <div>
+        <div class="brand-name">NodeCRM</div>
+        <div class="brand-sub" id="market-label">No market yet</div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <span class="save-pill" id="save-pill" hidden>Saved in this browser</span>
+      <button type="button" class="btn btn-ghost" data-action="sample">Sample market</button>
+      <button type="button" class="btn btn-ghost" data-action="open-wizard" id="btn-personas" hidden>Edit market</button>
+      <button type="button" class="btn btn-ghost" data-action="reset">Reset</button>
+    </div>
+  </header>
+  <main class="plane">
+    <div class="plane-scroll" id="plane-scroll">
+      <div class="grid" id="grid"></div>
+    </div>
+  </main>
+  <div id="stage-popover" class="popover" hidden></div>
+  <div id="wizard" class="overlay" data-testid="wizard" hidden></div>
+  <div id="comms" data-testid="comms" hidden></div>
+  <section id="channel-map" class="channel-map" data-testid="channel-map" hidden></section>
+  <div id="confirm" class="overlay" hidden></div>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <noscript><p class="noscript">NodeCRM needs JavaScript. It still runs entirely in this browser.</p></noscript>
+  <script src="js/util.js"></script>
+  <script src="js/registry.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/avatars.js"></script>
+  <script src="js/templates.js"></script>
+  <script src="js/model.js"></script>
+  <script src="js/stages.js"></script>
+  <script src="js/personas.js"></script>
+  <script src="js/nodes.js"></script>
+  <script src="js/plane.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/wizard.js"></script>
+  <script src="js/comms.js"></script>
+  <script src="js/channels.js"></script>
+  <script src="js/demo.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

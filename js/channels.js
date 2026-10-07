@@ -1,7 +1,7 @@
 (function (NS) {
   "use strict";
 
-  var ui = { selected: null, wire: false, wireFrom: null, selectedWire: null, drag: null };
+  var ui = { selected: null, wire: false, wireFrom: null, selectedWire: null, drag: null, roster: "lead", catalog: false };
 
   function root() { return document.getElementById("channel-map"); }
 
@@ -27,6 +27,7 @@
 
   function close() {
     ui.drag = null;
+    ui.catalog = false;
     root().hidden = true;
     root().innerHTML = "";
   }
@@ -79,87 +80,104 @@
   function peopleHTML() {
     var state = NS.model.get();
     var advance = NS.model.peekAdvanceStage();
-    var advanceLabel = "Move to " + (advance ? advance.name : "the next stage");
-    var channelOptions = '<option value="">No channel yet</option>' + state.awareness.channels.map(function (channel) {
+    var advanceLabel = advance ? advance.name : "Next";
+    var channelOptions = '<option value="">Channel</option>' + state.awareness.channels.map(function (channel) {
       return '<option value="' + channel.id + '">' + NS.util.esc(channel.name) + "</option>";
     }).join("");
-
-    function cards(status) {
-      return state.awareness.people.filter(function (person) { return person.status === status; }).map(function (person) {
-        var channel = state.awareness.channels.filter(function (item) { return item.id === person.channelId; })[0];
-        var source = channel ? '<span class="mini-chip">' + NS.util.esc(channel.name) + "</span>" : '<span class="mini-chip">No channel</span>';
-        var actions = "";
-        if (status === "lead") {
-          actions = '<button type="button" class="btn btn-primary" data-action="become-contact" data-person-id="' + person.id + '">Move into the plan</button>' +
-            '<button type="button" class="btn btn-danger" data-action="opt-out" data-person-id="' + person.id + '">They asked to stop</button>';
-        } else if (status === "contact") {
-          var options = '<option value=""' + (person.personaId ? "" : " selected") + ">Not matched yet</option>" + state.personas.map(function (persona) {
-            return '<option value="' + persona.id + '"' + (persona.id === person.personaId ? " selected" : "") + ">" + NS.util.esc(persona.name) + "</option>";
-          }).join("");
-          actions = '<label>Looks like<select data-action="assign-persona" data-person-id="' + person.id + '">' + options + "</select></label>" +
-            '<button type="button" class="btn btn-primary" data-action="move-forward" data-person-id="' + person.id + '">' + NS.util.esc(advanceLabel) + "</button>" +
-            '<button type="button" class="btn btn-danger" data-action="opt-out" data-person-id="' + person.id + '">They asked to stop</button>';
-        } else if (status === "opted_out") {
-          actions = '<p class="fine">Left out of every message. Put them back only if they ask to hear from you again.</p>' +
-            '<button type="button" class="btn" data-action="restore-person" data-person-id="' + person.id + '">They asked to hear from us again</button>';
-        } else {
-          var stage = NS.model.stageById(person.advancedStageId);
-          actions = '<p class="fine">On ' + NS.util.esc(stage ? stage.name : "the next stage") + ".</p>" +
-            '<button type="button" class="btn btn-danger" data-action="opt-out" data-person-id="' + person.id + '">They asked to stop</button>';
-        }
-        return '<article class="person-card"><header><strong>' + NS.util.esc(person.name) + "</strong>" + source + "</header>" + actions + "</article>";
-      }).join("");
-    }
-
-    return '<p class="fine">Moving someone ahead does not mean they consented. Consent is checked on each message.</p>' +
-      '<form id="lead-form" class="lead-form"><label>Person\'s name<input name="name" maxlength="48" placeholder="Name" required></label>' +
-      '<label>Where you met them<select name="channel">' + channelOptions + "</select></label>" +
-      '<button type="submit" class="btn">Add the name</button></form>' +
-      "<h3>Do not contact</h3>" + (cards("opted_out") || '<p class="fine">When someone asks to stop, they stay here so you do not add them again.</p>') +
-      "<h3>New names</h3>" + (cards("lead") || '<p class="fine">Names you have not put in the plan yet.</p>') +
-      "<h3>In the plan</h3>" + (cards("contact") || '<p class="fine">People you are matching to a person on the plane.</p>') +
-      "<h3>Moved ahead</h3>" + (cards("advanced") || '<p class="fine">People who left the first stage.</p>');
+    var tabs = [
+      ["opted_out", "Stopped"],
+      ["lead", "New"],
+      ["contact", "In plan"],
+      ["advanced", "Ahead"]
+    ].map(function (tab) {
+      var on = ui.roster === tab[0];
+      return '<button type="button" class="segmented-btn' + (on ? " is-on" : "") + '" data-action="roster" data-roster="' + tab[0] + '" aria-pressed="' + (on ? "true" : "false") + '">' + tab[1] + "</button>";
+    }).join("");
+    var rows = state.awareness.people.filter(function (person) { return person.status === ui.roster; }).map(function (person) {
+      var channel = state.awareness.channels.filter(function (item) { return item.id === person.channelId; })[0];
+      var source = channel ? '<span class="mini-chip">' + NS.util.esc(channel.name) + "</span>" : "";
+      var actions = "";
+      if (person.status === "lead") {
+        actions = '<button type="button" class="btn btn-primary" data-action="become-contact" data-person-id="' + person.id + '">In plan</button>';
+      } else if (person.status === "contact") {
+        var options = '<option value="">Match</option>' + state.personas.map(function (persona) {
+          return '<option value="' + persona.id + '"' + (persona.id === person.personaId ? " selected" : "") + ">" + NS.util.esc(persona.name) + "</option>";
+        }).join("");
+        actions = '<select data-action="assign-persona" data-person-id="' + person.id + '" aria-label="Match ' + NS.util.esc(person.name) + '">' + options + "</select>" +
+          '<button type="button" class="btn btn-primary" data-action="move-forward" data-person-id="' + person.id + '">' + NS.util.esc(advanceLabel) + "</button>";
+      } else if (person.status === "opted_out") {
+        actions = '<button type="button" class="btn" data-action="restore-person" data-person-id="' + person.id + '">Restore</button>';
+      } else {
+        var stage = NS.model.stageById(person.advancedStageId);
+        actions = '<span class="mini-chip">' + NS.util.esc(stage ? stage.name : "Next") + "</span>";
+      }
+      var stop = person.status === "opted_out" ? "" : '<button type="button" class="text-btn" data-action="opt-out" data-person-id="' + person.id + '">Stop</button>';
+      return '<div class="roster-row"><strong>' + NS.util.esc(person.name) + "</strong>" + source + actions + stop + "</div>";
+    }).join("");
+    return '<form id="lead-form" class="lead-form lead-inline"><input name="name" maxlength="48" placeholder="Name" aria-label="Name" required>' +
+      '<select name="channel" aria-label="Channel">' + channelOptions + "</select>" +
+      '<button type="submit" class="btn">Add</button></form>' +
+      '<div class="segmented" role="tablist" aria-label="People">' + tabs + "</div>" +
+      '<div class="roster">' + rows + "</div>";
   }
 
   function inspectorHTML() {
     var channel = NS.model.get().awareness.channels.filter(function (item) { return item.id === ui.selected; })[0];
-    if (!channel) return '<p class="fine">Select a channel to see its actions.</p>';
+    if (!channel) return "";
     var spec = specFor(channel);
     var actions = spec ? spec.actions.map(function (action) {
       var on = channel.actions && channel.actions[action.id];
       return '<button type="button" class="chip' + (on ? " is-on" : "") + '" data-action="toggle-map-action" data-channel-id="' + channel.id + '" data-act="' + action.id + '" aria-pressed="' + (on ? "true" : "false") + '">' + NS.util.esc(action.label) + "</button>";
     }).join("") : "";
-    var note = spec && spec.hint ? '<p class="fine">' + NS.util.esc(spec.hint) + "</p>" : '<p class="fine">This came from an older freeform channel. Prefer one from the catalog when you can.</p>';
     var quiet = spec ? NS.compliance.quietNote(spec) : "";
-    return '<p class="group-label">' + NS.util.esc(channel.name) + "</p>" + note +
-      (quiet ? '<p class="quiet-note">' + NS.util.esc(quiet) + "</p>" : "") +
-      (actions ? '<p class="group-label">Actions that belong to it</p><div class="chip-row">' + actions + "</div>" : "") +
-      '<label>Name on the map<input id="channel-rename" maxlength="40" value="' + NS.util.esc(channel.name) + '"></label>' +
-      '<button type="button" class="btn btn-danger" data-action="remove-channel" data-channel-id="' + channel.id + '">Remove channel</button>';
+    var why = "";
+    if (quiet || (spec && spec.compliance)) {
+      var lines = [];
+      if (quiet) lines.push(quiet);
+      (spec && spec.compliance && spec.compliance.checks || []).forEach(function (check) {
+        if (check.detail) lines.push(check.detail);
+      });
+      if (lines.length) {
+        why = '<details class="disclosure is-quiet"><summary>Why?</summary><div class="disclosure-body">' +
+          lines.map(function (line) { return '<p class="why-line">' + NS.util.esc(line) + "</p>"; }).join("") +
+          "</div></details>";
+      }
+    }
+    return '<label>Name<input id="channel-rename" maxlength="40" value="' + NS.util.esc(channel.name) + '" aria-label="Channel name"></label>' +
+      (actions ? '<div class="chip-row">' + actions + "</div>" : "") +
+      why +
+      '<button type="button" class="text-btn" data-action="remove-channel" data-channel-id="' + channel.id + '">Remove</button>';
+  }
+
+  function sectionTitle(id) {
+    if (id === "direct") return "Direct";
+    if (id === "social") return "Social";
+    if (id === "physical") return "In person";
+    return "Other";
   }
 
   function catalogHTML() {
+    if (!ui.catalog) return "";
     var state = NS.model.get();
     var placed = {};
     state.awareness.channels.forEach(function (channel) { placed[channel.catalogId] = channel.id; });
-    return NS.registry.groups(state).map(function (group) {
-      var chips = group.items.map(function (item) {
+    var groups = NS.registry.groups(state).map(function (group) {
+      var rows = group.items.map(function (item) {
         var on = !!placed[item.id];
-        return '<button type="button" class="chip' + (on ? " is-on" : "") + '" data-action="add-catalog" data-catalog="' + item.id + '" aria-pressed="' + (on ? "true" : "false") + '">' + NS.util.esc(item.label) + "</button>";
+        return '<button type="button" class="menu-item' + (on ? " is-on" : "") + '" data-action="add-catalog" data-catalog="' + item.id + '" aria-pressed="' + (on ? "true" : "false") + '">' + NS.util.esc(item.label) + "</button>";
       }).join("");
       var extra = "";
-      if (group.allowNetwork) {
-        extra = '<details class="disclosure"><summary>Add a network</summary><div class="disclosure-body edit-row">' +
-          '<input id="network-name" maxlength="40" placeholder="Network name" aria-label="Network name">' +
-          '<button type="button" class="btn" data-action="add-network">Add</button></div></details>';
-      }
-      if (group.secondary) {
-        return '<details class="disclosure"><summary>Something else</summary><div class="disclosure-body"><div class="chip-row">' + chips + "</div>" +
-          '<div class="edit-row"><input id="custom-name" maxlength="40" placeholder="Channel name" aria-label="Custom channel name">' +
-          '<button type="button" class="btn" data-action="add-custom">Add</button></div></div></details>';
-      }
-      return '<section class="catalog-group"><p class="group-label">' + NS.util.esc(group.label) + '</p><div class="chip-row">' + chips + "</div>" + extra + "</section>";
+      if (group.allowNetwork) extra = '<button type="button" class="menu-item" data-action="show-map-extra" data-extra="network">Add a network</button>';
+      if (group.allowCustom) extra = '<button type="button" class="menu-item" data-action="show-map-extra" data-extra="custom">Add a channel</button>';
+      return '<p class="menu-label">' + sectionTitle(group.id) + "</p>" + rows + extra;
     }).join("");
+    var naming = "";
+    if (ui.catalog === "network" || ui.catalog === "custom") {
+      var id = ui.catalog === "network" ? "network-name" : "custom-name";
+      var action = ui.catalog === "network" ? "add-network" : "add-custom";
+      naming = '<div class="menu-name"><input id="' + id + '" maxlength="40" placeholder="Name" aria-label="Name"><button type="button" class="btn btn-primary" data-action="' + action + '">Add</button></div>';
+    }
+    return '<div class="menu catalog-menu" role="menu" aria-label="Add a channel">' + groups + naming + "</div>";
   }
 
   function render() {
@@ -177,18 +195,19 @@
     }).join("");
     var wireLabel = ui.wire ? "Connecting" : "Connect channels";
     var wireExtra = ui.selectedWire ? '<button type="button" class="btn btn-danger" data-action="remove-wire" data-wire-id="' + ui.selectedWire + '">Remove connection</button>' : "";
+    var inspector = inspectorHTML();
     root().innerHTML = '<div class="map-sheet" role="dialog" aria-modal="true" aria-labelledby="map-title">' +
       '<header class="map-head"><button type="button" class="btn btn-plain" data-action="close-map">Done</button>' +
-      '<div class="map-title-block"><h2 id="map-title">' + NS.util.esc(stage.name) + '</h2><p class="fine">Pick channels from the list. Each one brings the actions that belong to it. Custom is at the bottom.</p></div></header>' +
-      '<div class="catalog-bar">' + catalogHTML() + "</div>" +
+      '<div class="map-title-block"><h2 id="map-title">' + NS.util.esc(stage.name) + "</h2></div>" +
+      '<div class="catalog-anchor"><button type="button" class="btn btn-tinted" data-action="toggle-catalog" aria-expanded="' + (ui.catalog ? "true" : "false") + '">Add</button>' +
+      catalogHTML() + "</div></header>" +
       '<div class="map-toolbar">' +
       '<button type="button" class="btn' + (ui.wire ? " is-on" : "") + '" data-action="toggle-wire" aria-pressed="' + (ui.wire ? "true" : "false") + '" data-testid="wire-toggle">' + wireLabel + "</button>" +
       wireExtra + "</div>" +
       '<div class="map-body"><div class="map-canvas-wrap"><div class="map-canvas" id="map-canvas" data-testid="map-canvas">' +
       '<svg id="map-wires" class="map-wires"></svg>' + nodes +
-      (nodes ? "" : '<p class="map-empty">Choose SMS, email, phone, a network, or an in-person channel to start.</p>') +
-      '</div><div class="map-inspector" id="map-inspector">' + inspectorHTML() + "</div></div>" +
-      '<aside class="people-pane" aria-label="People and do not contact">' + peopleHTML() + "</aside></div></div>";
+      '</div>' + (inspector ? '<div class="map-inspector" id="map-inspector">' + inspector + "</div>" : "") + "</div>" +
+      '<aside class="people-pane" aria-label="People">' + peopleHTML() + "</aside></div></div>";
     redrawWires();
   }
 
@@ -329,7 +348,21 @@
       if (!button) return;
       var action = button.dataset.action;
       if (action === "close-map") close();
-      else if (action === "add-catalog") placeCatalog(button.dataset.catalog);
+      else if (action === "toggle-catalog") {
+        ui.catalog = ui.catalog ? false : true;
+        render();
+      } else if (action === "show-map-extra") {
+        ui.catalog = button.dataset.extra === "network" ? "network" : "custom";
+        render();
+        var extraInput = document.getElementById(ui.catalog === "network" ? "network-name" : "custom-name");
+        if (extraInput) extraInput.focus();
+      } else if (action === "roster") {
+        ui.roster = button.dataset.roster || "lead";
+        render();
+      } else if (action === "add-catalog") {
+        ui.catalog = false;
+        placeCatalog(button.dataset.catalog);
+      }
       else if (action === "add-network" || action === "add-custom") {
         var input = document.getElementById(action === "add-network" ? "network-name" : "custom-name");
         var added = NS.model.addExtra(input ? input.value : "", action === "add-network" ? "social" : "custom");
@@ -337,6 +370,7 @@
           NS.ui.toast(added.error);
           return;
         }
+        ui.catalog = false;
         placeCatalog(added.extra.id);
       } else if (action === "toggle-map-action") {
         var channel = NS.model.get().awareness.channels.filter(function (item) { return item.id === button.dataset.channelId; })[0];
@@ -361,21 +395,22 @@
       } else if (action === "become-contact") {
         var movedIn = NS.model.convertToContact(button.dataset.personId);
         if (!movedIn.ok) NS.ui.toast(movedIn.error);
-        else NS.ui.toast("They are in the plan. Consent is still checked on each message.");
+        else NS.ui.toast("In the plan.");
       } else if (action === "opt-out") {
         NS.model.optOutPerson(button.dataset.personId);
-        NS.ui.toast("Marked Do not contact. They stay off every message.");
+        ui.roster = "opted_out";
+        NS.ui.toast("Do not contact.");
       } else if (action === "restore-person") {
         NS.ui.confirm({
-          title: "Hear from you again?",
-          body: "Put them back only if they asked. Otherwise they stay on Do not contact so nobody messages them by mistake.",
-          confirmLabel: "They asked to come back",
-          cancelLabel: "Keep them off",
+          title: "Restore?",
+          body: "Only if they asked to hear from you again.",
+          confirmLabel: "Restore",
+          cancelLabel: "Keep off",
           danger: true
         }).then(function (ok) {
           if (!ok) return;
           NS.model.restorePerson(button.dataset.personId);
-          NS.ui.toast("Back to new names. They are not in a message until you move them.");
+          ui.roster = "lead";
         });
       } else if (action === "move-forward") {
         var moved = NS.model.movePersonForward(button.dataset.personId);
@@ -383,9 +418,7 @@
           NS.ui.toast(moved.error);
           return;
         }
-        NS.ui.toast(moved.created
-          ? "Added " + moved.stage.name + " and moved them there. This is not a consent check."
-          : "Moved them to " + moved.stage.name + ".");
+        NS.ui.toast(moved.stage.name);
       }
     });
   }

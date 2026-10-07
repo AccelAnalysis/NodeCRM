@@ -27,7 +27,7 @@
     var node = NS.model.nodeAt(persona.id, stage.id);
     if (!node) {
       var start = stage.kind === "awareness" && !NS.model.get().nodes.some(function (item) { return item.personaId === persona.id; });
-      return '<div class="cell">' + (start ? '<span class="cell-hint">Start the sequence</span>' : "") +
+      return '<div class="cell">' + (start ? '<span class="cell-hint">Start</span>' : "") +
         '<button type="button" class="bubble is-empty" data-action="create-node" data-testid="node-empty" data-persona-id="' + persona.id + '" data-stage-id="' + stage.id + '" aria-label="Start a step for ' + NS.util.esc(persona.name) + " at " + NS.util.esc(stage.name) + '">' + NS.util.icon("plus") + "</button></div>";
     }
     var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;

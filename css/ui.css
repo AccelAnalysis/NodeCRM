@@ -19,12 +19,13 @@
 .drawer-panel,
 .modal,
 .popover,
-.map-sheet {
-  background: var(--glass-thick);
-  border: 1px solid var(--glass-stroke);
-  box-shadow: var(--shadow-2), inset 0 0.5px 0 rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(28px) saturate(1.45);
-  -webkit-backdrop-filter: blur(28px) saturate(1.45);
+.map-sheet,
+.dress-card {
+  background: #ffffff;
+  border: 1px solid var(--separator);
+  box-shadow: var(--shadow-2);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .wizard-card,

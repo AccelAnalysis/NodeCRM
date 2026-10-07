@@ -26,8 +26,8 @@
         quiet: true,
         footer: "sms",
         checks: [
-          { id: "consent", label: "Each person gave express consent to receive texts. A phone number by itself is not a yes.", required: true },
-          { id: "identity", label: "The text says who you are.", required: true }
+          { id: "consent", label: "Consent to text", detail: "Each person agreed to texts. A phone number is not a yes.", required: true },
+          { id: "identity", label: "Says who you are", detail: "The text names you.", required: true }
         ]
       }
     }),
@@ -52,8 +52,8 @@
         quiet: false,
         footer: "email",
         checks: [
-          { id: "consent", label: "These people agreed to hear from you by email.", required: true },
-          { id: "honest", label: "The subject line matches what the email is actually about.", required: true }
+          { id: "consent", label: "Agreed to email", detail: "These people agreed to hear from you by email.", required: true },
+          { id: "honest", label: "Honest subject", detail: "The subject matches the email.", required: true }
         ]
       }
     }),
@@ -79,8 +79,8 @@
         quiet: true,
         footer: null,
         checks: [
-          { id: "consent", label: "They agreed to a call. Do not use an automatic dialer or a prerecorded voice.", required: true },
-          { id: "manual", label: "A person will place this call. This step is only a reminder.", required: true }
+          { id: "consent", label: "Agreed to a call", detail: "No automatic dialer and no recorded voice.", required: true },
+          { id: "manual", label: "A person calls", detail: "This step is a reminder. Nothing is dialed.", required: true }
         ]
       }
     })
@@ -271,8 +271,8 @@
       quiet: false,
       footer: null,
       checks: [
-        { id: "stop", label: "If they ask you to stop, you will stop.", required: true },
-        { id: "honest", label: "You will use your real name and your real company.", required: true }
+        { id: "stop", label: "Stop if asked", detail: "If they ask you to stop, you stop.", required: true },
+        { id: "honest", label: "Real name", detail: "Use your real name and your company.", required: true }
       ]
     };
   }
@@ -284,8 +284,8 @@
       quiet: false,
       footer: item.id === "mail" ? "mail" : null,
       checks: inPerson
-        ? [{ id: "permission", label: "You will ask before you add them to email or text.", required: true }]
-        : [{ id: "identity", label: "The piece says who sent it and how to refuse future mail.", required: true }]
+        ? [{ id: "permission", label: "Ask first", detail: "Ask before you add them to email or text.", required: true }]
+        : [{ id: "identity", label: "Says who sent it", detail: "Say who sent it, and how to refuse more mail.", required: true }]
     };
   }
 
@@ -317,9 +317,39 @@
   ];
 
   var nodeModes = [
-    { id: "linear", label: "Then move on", hint: "When this step is done, they move to the next stage." },
-    { id: "cycle", label: "Stay on this step", hint: "They stay here until the exit you name." }
+    { id: "linear", label: "Move on", hint: "When this step is done, they move to the next stage." },
+    { id: "cycle", label: "Stay", hint: "They stay here until the exit you name." }
   ];
+
+  // Local sketch of events that can move someone into a stage. Nothing here is a live feed.
+  var stageEvents = [
+    { id: "form", label: "Form" },
+    { id: "pitch", label: "Pitch" },
+    { id: "meeting", label: "Meeting" },
+    { id: "contract", label: "Contract" },
+    { id: "payment", label: "Payment" },
+    { id: "service-date", label: "Service date" },
+    { id: "job-complete", label: "Job complete" },
+    { id: "renewal", label: "Renewal" },
+    { id: "referral", label: "Referral" }
+  ];
+
+  var stageEventDefaults = {
+    Consideration: "form",
+    Enrollment: "contract",
+    Service: "service-date",
+    Loyalty: "job-complete",
+    "Recurring Relationships": "renewal",
+    Advocacy: "referral"
+  };
+
+  function eventById(id) {
+    return stageEvents.filter(function (item) { return item.id === id; })[0] || null;
+  }
+
+  function defaultEventFor(name) {
+    return stageEventDefaults[name] || "";
+  }
 
   function extraChannel(extra) {
     var socialActions = [
@@ -347,7 +377,7 @@
         quiet: false,
         footer: null,
         checks: [
-          { id: "stop", label: "If they ask you to stop, you will stop.", required: true }
+          { id: "stop", label: "Stop if asked", detail: "If they ask you to stop, you stop.", required: true }
         ]
       }
     };
@@ -473,6 +503,9 @@
     blankComms: blankComms,
     mergeComms: mergeComms,
     normalizeUnit: normalizeUnit,
-    catalogIdForKind: catalogIdForKind
+    catalogIdForKind: catalogIdForKind,
+    stageEvents: stageEvents,
+    eventById: eventById,
+    defaultEventFor: defaultEventFor
   };
 })(window.NodeCRM);

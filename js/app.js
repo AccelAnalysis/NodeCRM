@@ -2,7 +2,7 @@
   "use strict";
 
   function syncChrome(state) {
-    document.getElementById("market-label").textContent = state.market ? state.market.name : "No market yet";
+    document.getElementById("market-label").textContent = state.market ? (NS.model.marketTitle() || "Untitled market") : "No market yet";
     document.getElementById("btn-personas").hidden = !state.market;
   }
 
@@ -77,8 +77,9 @@
     NS.comms.close();
     NS.channels.close();
     NS.wizard.close();
+    if (NS.plan) NS.plan.close();
     NS.demo.load();
-    NS.ui.toast("Sample market is on the plane. It stays in this browser only.");
+    NS.ui.toast("Sample market is on the plane. Email still needs a consent check before it counts as ready.");
   }
 
   async function reset() {
@@ -96,6 +97,7 @@
     NS.comms.close();
     NS.channels.close();
     NS.wizard.close();
+    if (NS.plan) NS.plan.close();
     NS.model.reset();
     NS.ui.toast("Workspace cleared.");
   }
@@ -116,6 +118,7 @@
     else if (action === "remove-persona") removePersona(el.dataset.personaId);
     else if (action === "sample") sample();
     else if (action === "reset") reset();
+    else if (action === "check-plan") NS.plan.open();
   }
 
   function boot() {
@@ -126,11 +129,12 @@
     NS.wizard.init();
     NS.comms.init();
     NS.channels.init();
+    NS.plan.init();
     NS.model.subscribe(onState);
     syncChrome(NS.model.get());
     NS.plane.render();
     document.addEventListener("click", function (event) {
-      var inside = event.target.closest("#wizard, #comms, #channel-map, #confirm, #stage-popover");
+      var inside = event.target.closest("#wizard, #comms, #channel-map, #confirm, #plan, #stage-popover");
       if (!event.target.closest("#stage-popover")) NS.stages.closePopover();
       if (inside) return;
       var el = event.target.closest("[data-action]");
@@ -140,7 +144,8 @@
     document.addEventListener("keydown", function (event) {
       if (event.key !== "Escape") return;
       if (NS.ui.confirmOpen()) return;
-      if (NS.comms.isOpen()) NS.comms.close();
+      if (NS.plan.isOpen()) NS.plan.close();
+      else if (NS.comms.isOpen()) NS.comms.close();
       else if (NS.wizard.isOpen()) NS.wizard.close();
       else if (NS.channels.isOpen()) NS.channels.close();
       else NS.stages.closePopover();

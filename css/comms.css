@@ -3,7 +3,7 @@
 .scrim {
   position: absolute;
   inset: 0;
-  background: rgba(6, 8, 12, 0.4);
+  background: var(--scrim);
   backdrop-filter: blur(10px) saturate(1.1);
   -webkit-backdrop-filter: blur(10px) saturate(1.1);
   animation: fade-in var(--dur) var(--ease);
@@ -49,7 +49,7 @@
   flex-direction: column;
   gap: 14px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+  scrollbar-color: rgba(0, 0, 0, 0.22) transparent;
 }
 
 .mode-switch {
@@ -57,7 +57,7 @@
   gap: 2px;
   padding: 3px;
   border-radius: 12px;
-  background: rgba(0, 0, 0, 0.28);
+  background: var(--field);
 }
 
 .mode-option {
@@ -81,9 +81,9 @@
 }
 
 .mode-option:has(input:checked) {
-  background: rgba(255, 255, 255, 0.14);
+  background: var(--surface);
   color: var(--label);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .mode-option:has(input:focus-visible) {
@@ -103,7 +103,7 @@
   flex-direction: column;
   border-radius: 14px;
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--field);
 }
 
 .group-row,
@@ -131,7 +131,7 @@
 }
 
 .group-row:hover,
-.picker button:hover { background: rgba(255, 255, 255, 0.05); }
+.picker button:hover { background: var(--hover); }
 
 .group-row .chev { color: var(--label-tertiary); }
 
@@ -141,7 +141,7 @@
   gap: 10px;
   padding: 12px 12px;
   border-radius: 16px;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--field);
 }
 
 .channel-block header { display: flex; }
@@ -221,7 +221,7 @@
 .is-hot textarea,
 .is-hot select { box-shadow: inset 0 0 0 2px var(--accent); }
 
-.picker { display: flex; flex-direction: column; border-radius: 14px; overflow: hidden; background: rgba(0, 0, 0, 0.2); }
+.picker { display: flex; flex-direction: column; border-radius: 14px; overflow: hidden; background: var(--field); }
 
 .picker > p {
   margin: 0;
@@ -251,7 +251,7 @@
 
 .disclosure {
   border-radius: 14px;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--field);
   padding: 4px 12px 8px;
 }
 

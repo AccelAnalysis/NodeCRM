@@ -7,7 +7,7 @@
       : "";
     return '<div class="persona-cell" data-persona-id="' + persona.id + '">' +
       '<div class="persona-card">' +
-      '<div class="avatar">' + NS.avatars.render(persona.avatarSeed) + "</div>" +
+      '<div class="avatar">' + NS.avatars.render(persona.avatar || persona.avatarSeed) + "</div>" +
       '<div class="persona-copy">' +
       '<div class="persona-name">' + NS.util.esc(persona.name) + badge + "</div>" +
       (persona.role ? '<div class="persona-role">' + NS.util.esc(persona.role) + "</div>" : "") +
@@ -20,14 +20,18 @@
     return '<button type="button" class="y-start" data-action="open-wizard" data-testid="y-axis-start">' +
       '<span class="y-kicker">Personas</span>' +
       "<strong>Define your market</strong>" +
-      "<span>Segments and people land on this axis. ICP is a badge, not a row.</span>" +
+      "<span>Where they are, then who you can find. Best-fit is a badge, not its own row.</span>" +
       '<span class="y-cta">Begin ' + NS.util.icon("chevron") + "</span>" +
       "</button>";
   }
 
   function segmentHTML(segment) {
+    var read = NS.audience.reach(segment);
+    var who = segment.audience === "b2b" ? "Companies" : segment.audience === "b2c" ? "People" : "";
+    var meta = who ? who + " · " + read.title : "";
     return '<div class="segment-row"><div class="segment-label"><span>' + NS.util.esc(segment.name) + "</span>" +
-      '<button type="button" class="text-btn" data-action="open-wizard" data-step="3">Edit</button></div></div>';
+      (meta ? '<span class="segment-meta">' + NS.util.esc(meta) + "</span>" : "") +
+      '<button type="button" class="text-btn" data-action="open-wizard" data-step="2">Edit</button></div></div>';
   }
 
   function emptySegmentHTML(colspanNote) {

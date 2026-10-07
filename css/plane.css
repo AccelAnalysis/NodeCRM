@@ -19,13 +19,13 @@
 }
 
 .trace {
-  stroke: rgba(186, 224, 218, 0.55);
+  stroke: rgba(12, 110, 102, 0.45);
   stroke-width: 1.5;
   stroke-linecap: round;
 }
 
 .trace.is-drawing {
-  stroke: rgba(231, 250, 246, 0.95);
+  stroke: var(--accent);
   animation: trace-draw 320ms var(--spring) forwards;
 }
 
@@ -35,7 +35,7 @@
   position: sticky;
   top: var(--stick-top);
   z-index: 3;
-  background: rgba(20, 26, 34, 0.9);
+  background: var(--sticky);
   backdrop-filter: blur(16px) saturate(1.2);
   -webkit-backdrop-filter: blur(16px) saturate(1.2);
   box-shadow: inset 0 -0.5px 0 var(--separator);
@@ -108,7 +108,7 @@
   border-radius: 10px;
   min-height: 36px;
   padding: 6px 8px;
-  background: rgba(0, 0, 0, 0.28);
+  background: var(--field);
   box-shadow: inset 0 0 0 1.5px var(--accent);
 }
 
@@ -162,14 +162,14 @@
   height: 44px;
   border-radius: 50%;
   border: 0;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surface);
   color: var(--label);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 8px 18px rgba(0, 0, 0, 0.18);
+  box-shadow: inset 0 0 0 1px var(--separator), 0 8px 18px rgba(0, 0, 0, 0.06);
   display: grid;
   place-items: center;
 }
 
-.add-stage:hover { background: rgba(255, 255, 255, 0.14); }
+.add-stage:hover { background: var(--field); }
 
 .add-stage .mini-icon { width: 18px; height: 18px; }
 
@@ -180,7 +180,7 @@
 }
 
 .persona-cell {
-  background: rgba(20, 26, 34, 0.92);
+  background: var(--sticky);
   backdrop-filter: blur(16px) saturate(1.2);
   -webkit-backdrop-filter: blur(16px) saturate(1.2);
   min-height: 116px;
@@ -230,7 +230,7 @@
   gap: 4px;
   padding: 2px 4px 2px 8px;
   border-radius: var(--r-pill);
-  background: rgba(20, 26, 34, 0.88);
+  background: var(--surface);
   color: var(--label-secondary);
   font-size: var(--text-footnote);
   font-weight: 650;
@@ -250,12 +250,11 @@
   padding: 22px 20px 18px;
   border-radius: var(--r-lg);
   border: 0;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.88);
   color: var(--label);
   box-shadow:
-    inset 0 0 0 1px rgba(125, 206, 196, 0.38),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 16px 36px rgba(0, 0, 0, 0.24);
+    inset 0 0 0 1px rgba(12, 110, 102, 0.35),
+    0 16px 36px rgba(0, 0, 0, 0.06);
   transition: transform var(--dur-fast) var(--ease), box-shadow var(--dur) var(--ease);
 }
 
@@ -266,16 +265,15 @@
   height: 200px;
   right: -60px;
   top: -70px;
-  background: radial-gradient(circle, rgba(125, 206, 196, 0.18), transparent 68%);
+  background: radial-gradient(circle, rgba(12, 110, 102, 0.12), transparent 68%);
   pointer-events: none;
 }
 
 .y-start:hover {
   transform: scale(1.015);
   box-shadow:
-    inset 0 0 0 1px rgba(125, 206, 196, 0.6),
-    inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    0 18px 40px rgba(0, 0, 0, 0.3);
+    inset 0 0 0 1px rgba(12, 110, 102, 0.55),
+    0 18px 40px rgba(0, 0, 0, 0.08);
 }
 
 .y-kicker {
@@ -315,7 +313,7 @@
 
 .y-add {
   padding: 8px 12px 12px;
-  background: rgba(20, 26, 34, 0.92);
+  background: var(--sticky);
 }
 
 .cell {
@@ -342,8 +340,8 @@
 
 .bubble.is-empty {
   background: transparent;
-  color: rgba(245, 245, 247, 0.55);
-  box-shadow: inset 0 0 0 1.25px rgba(255, 255, 255, 0.2);
+  color: var(--label-tertiary);
+  box-shadow: inset 0 0 0 1.25px rgba(60, 60, 67, 0.28);
 }
 
 .bubble.is-empty .mini-icon { width: 18px; height: 18px; }
@@ -355,9 +353,9 @@
 }
 
 .bubble.is-filled {
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--accent-bright);
-  box-shadow: inset 0 0 0 1.5px rgba(125, 206, 196, 0.75);
+  background: var(--accent-deep);
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1.5px rgba(12, 110, 102, 0.45);
 }
 
 .bubble.is-filled.is-set {

@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="dark">
-  <meta name="theme-color" content="#161d27">
-  <meta name="description" content="NodeCRM is a calm communications plane. Stages across, personas down, a node where they meet.">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#f5f5f7">
+  <meta name="description" content="NodeCRM is a calm communications plane. Stages across, personas down, a step where they meet.">
   <title>NodeCRM</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/tokens.css">
@@ -16,6 +16,8 @@
   <link rel="stylesheet" href="css/wizard.css">
   <link rel="stylesheet" href="css/comms.css">
   <link rel="stylesheet" href="css/channels.css">
+  <link rel="stylesheet" href="css/guide.css">
+  <link rel="stylesheet" href="assets/vendor/leaflet.css">
 </head>
 <body>
   <div class="app">
@@ -30,6 +32,7 @@
         </div>
         <div class="toolbar-actions" role="toolbar" aria-label="Workspace">
           <span class="save-pill" id="save-pill" hidden title="Saved in this browser">Saved</span>
+          <button type="button" class="btn btn-plain" data-action="check-plan">Check the plan</button>
           <button type="button" class="btn btn-plain" data-action="sample">Sample market</button>
           <button type="button" class="btn btn-tinted" data-action="open-wizard" id="btn-personas" hidden>Edit market</button>
           <button type="button" class="btn btn-plain" data-action="reset">Reset</button>
@@ -47,10 +50,15 @@
   <div id="comms" data-testid="comms" hidden></div>
   <section id="channel-map" class="channel-map" data-testid="channel-map" hidden></section>
   <div id="confirm" class="overlay" hidden></div>
+  <div id="plan" class="overlay" hidden></div>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
   <noscript><p class="noscript">NodeCRM needs JavaScript. It still runs entirely in this browser.</p></noscript>
+  <script src="assets/vendor/leaflet.js"></script>
   <script src="js/util.js"></script>
   <script src="js/registry.js"></script>
+  <script src="js/audience.js"></script>
+  <script src="js/compliance.js"></script>
+  <script src="js/geo.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/avatars.js"></script>
   <script src="js/templates.js"></script>
@@ -63,6 +71,7 @@
   <script src="js/wizard.js"></script>
   <script src="js/comms.js"></script>
   <script src="js/channels.js"></script>
+  <script src="js/plan.js"></script>
   <script src="js/demo.js"></script>
   <script src="js/app.js"></script>
 </body>

@@ -1,8 +1,8 @@
 (function (NS) {
   "use strict";
 
-  function dotColor(id) {
-    return { email: "#7dcec4", sms: "#e8c98a", mail: "#e7b1a4", call: "#a9c0f5" }[id] || "#8e98a3";
+  function dotColor(channel) {
+    return channel.dot || "#6e6e73";
   }
 
   function modeMark(mode) {
@@ -13,10 +13,11 @@
   }
 
   function bubbleInner(node) {
-    var dots = NS.registry.commChannels.filter(function (ch) {
+    var enabled = NS.registry.list(NS.model.get()).filter(function (ch) {
       return node.comms[ch.id] && node.comms[ch.id].enabled;
-    }).map(function (ch) {
-      return '<i style="background:' + dotColor(ch.id) + '" title="' + NS.util.esc(ch.label) + '"></i>';
+    });
+    var dots = enabled.slice(0, 4).map(function (ch) {
+      return '<i style="background:' + dotColor(ch) + '" title="' + NS.util.esc(ch.label) + '"></i>';
     }).join("");
     return '<span class="bubble-mode">' + modeMark(node.mode) + "</span>" +
       (dots ? '<span class="bubble-dots" aria-hidden="true">' + dots + "</span>" : "");
@@ -25,7 +26,9 @@
   function cellHTML(persona, stage, animateId) {
     var node = NS.model.nodeAt(persona.id, stage.id);
     if (!node) {
-      return '<div class="cell"><button type="button" class="bubble is-empty" data-action="create-node" data-testid="node-empty" data-persona-id="' + persona.id + '" data-stage-id="' + stage.id + '" aria-label="Create node for ' + NS.util.esc(persona.name) + " at " + NS.util.esc(stage.name) + '">' + NS.util.icon("plus") + "</button></div>";
+      var start = stage.kind === "awareness" && !NS.model.get().nodes.some(function (item) { return item.personaId === persona.id; });
+      return '<div class="cell">' + (start ? '<span class="cell-hint">Start the sequence</span>' : "") +
+        '<button type="button" class="bubble is-empty" data-action="create-node" data-testid="node-empty" data-persona-id="' + persona.id + '" data-stage-id="' + stage.id + '" aria-label="Start a step for ' + NS.util.esc(persona.name) + " at " + NS.util.esc(stage.name) + '">' + NS.util.icon("plus") + "</button></div>";
     }
     var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     var fresh = node.id === animateId ? (reduce ? " is-fade" : " is-new") : "";

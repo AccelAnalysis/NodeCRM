@@ -4,6 +4,10 @@
   var listeners = [];
   var state = null;
 
+  function blankSender() {
+    return { name: "", postal: "" };
+  }
+
   function createInitial() {
     return {
       version: 1,
@@ -13,7 +17,9 @@
       stages: [{ id: "stage_awareness", name: "Awareness", kind: "awareness" }],
       nodes: [],
       awareness: { channels: [], wires: [], people: [] },
-      templates: []
+      templates: [],
+      extras: [],
+      sender: blankSender()
     };
   }
 
@@ -67,7 +73,7 @@
     return state.awareness.people.filter(function (person) { return person.id === id; })[0] || null;
   }
 
-  function hydrateNode(raw) {
+  function hydrateNode(raw, workspace) {
     return {
       id: String(raw.id),
       personaId: raw.personaId,
@@ -75,23 +81,48 @@
       mode: raw.mode === "cycle" ? "cycle" : "linear",
       exitAction: String(raw.exitAction || ""),
       templateId: raw.templateId || null,
-      comms: NS.registry.mergeComms(raw.comms),
+      comms: NS.registry.mergeComms(raw.comms, workspace),
       createdAt: raw.createdAt || null
     };
+  }
+
+  function normalizeMarket(raw) {
+    if (!raw || typeof raw !== "object") return null;
+    var name = String(raw.name || "").trim();
+    var description = String(raw.description || "").trim();
+    var places = NS.geo.normalizePlaces(raw.geo && raw.geo.places);
+    if (!name && !description && !places.length) return null;
+    return { name: name, description: description, geo: { places: places } };
+  }
+
+  function normalizeCustom(list) {
+    if (!Array.isArray(list)) return [];
+    return list.map(function (item) {
+      var label = String((item && item.label) || "").trim().slice(0, 32);
+      if (!label) return null;
+      return { id: String(item.id || NS.util.uid("trait")), label: label };
+    }).filter(Boolean).slice(0, 4);
+  }
+
+  function normalizeAvatar(raw) {
+    if (!raw || typeof raw !== "object") return null;
+    return NS.avatars.normalize(raw);
   }
 
   function normalize(data) {
     var base = createInitial();
     var next = {
       version: 1,
-      market: data.market && String(data.market.name || "").trim()
-        ? { name: String(data.market.name).trim(), description: String(data.market.description || "") }
-        : null,
+      market: normalizeMarket(data.market),
       segments: Array.isArray(data.segments) ? data.segments.map(function (segment) {
+        var audience = segment.audience === "b2b" ? "b2b" : segment.audience === "b2c" ? "b2c" : "";
         return {
           id: String(segment.id),
           name: String(segment.name || "Segment").trim() || "Segment",
-          description: String(segment.description || "")
+          description: String(segment.description || ""),
+          audience: audience,
+          params: NS.audience.sanitize(audience || "b2c", segment.params),
+          custom: normalizeCustom(segment.custom)
         };
       }) : [],
       personas: [],
@@ -106,7 +137,20 @@
         : base.stages,
       nodes: [],
       awareness: { channels: [], wires: [], people: [] },
-      templates: Array.isArray(data.templates) ? data.templates : []
+      templates: Array.isArray(data.templates) ? data.templates : [],
+      extras: (Array.isArray(data.extras) ? data.extras : []).map(function (extra) {
+        var name = String(extra.name || "").trim().slice(0, 40);
+        if (!name) return null;
+        return {
+          id: String(extra.id || NS.util.uid("ext")),
+          name: name,
+          group: extra.group === "social" ? "social" : "custom"
+        };
+      }).filter(Boolean).slice(0, 12),
+      sender: {
+        name: String((data.sender && data.sender.name) || "").trim().slice(0, 80),
+        postal: String((data.sender && data.sender.postal) || "").trim().slice(0, 160)
+      }
     };
 
     var seenAwareness = false;
@@ -132,7 +176,8 @@
         role: String(persona.role || ""),
         icp: !!persona.icp,
         icpNote: String(persona.icpNote || ""),
-        avatarSeed: Number(persona.avatarSeed) || 1
+        avatarSeed: Number(persona.avatarSeed) || 1,
+        avatar: normalizeAvatar(persona.avatar)
       };
     });
 
@@ -142,14 +187,25 @@
     next.stages.forEach(function (stage) { stageIds[stage.id] = true; });
     next.nodes = (Array.isArray(data.nodes) ? data.nodes : []).filter(function (node) {
       return personaIds[node.personaId] && stageIds[node.stageId];
-    }).map(hydrateNode);
+    }).map(function (node) { return hydrateNode(node, next); });
 
     var channels = (data.awareness && data.awareness.channels) || [];
     next.awareness.channels = channels.map(function (channel, index) {
+      var catalogId = channel.catalogId || NS.registry.catalogIdForKind(channel.kind) || "";
+      var spec = catalogId ? NS.registry.channelById(catalogId, next) : null;
+      var actions = {};
+      if (spec) {
+        spec.actions.forEach(function (action, actionIndex) {
+          if (channel.actions && channel.actions[action.id] != null) actions[action.id] = !!channel.actions[action.id];
+          else actions[action.id] = actionIndex === 0;
+        });
+      }
       return {
         id: String(channel.id),
-        name: String(channel.name || "Channel").trim() || "Channel",
-        kind: String(channel.kind || "other"),
+        name: String(channel.name || (spec ? spec.label : "Channel")).trim() || "Channel",
+        catalogId: spec ? spec.id : "custom",
+        kind: spec ? spec.id : String(channel.kind || "custom"),
+        actions: actions,
         x: Number.isFinite(Number(channel.x)) ? Number(channel.x) : 18 + (index % 4) * 16,
         y: Number.isFinite(Number(channel.y)) ? Number(channel.y) : 24 + (index % 3) * 18
       };
@@ -164,7 +220,7 @@
     });
     var people = (data.awareness && data.awareness.people) || [];
     next.awareness.people = people.map(function (person) {
-      var status = person.status === "contact" || person.status === "advanced" ? person.status : "lead";
+      var status = person.status === "contact" || person.status === "advanced" || person.status === "opted_out" ? person.status : "lead";
       return {
         id: String(person.id),
         name: String(person.name || "Lead").trim() || "Lead",
@@ -194,7 +250,17 @@
       state.nodes.length === 0 &&
       state.awareness.channels.length === 0 &&
       state.awareness.people.length === 0 &&
-      state.templates.length === 0;
+      state.templates.length === 0 &&
+      state.extras.length === 0 &&
+      !state.sender.name &&
+      !state.sender.postal;
+  }
+
+  function marketTitle() {
+    if (!state.market) return "";
+    if (state.market.name) return state.market.name;
+    var line = NS.geo.summary(state.market.geo).replace(/\.$/, "");
+    return line || "Untitled market";
   }
 
   function reset() {
@@ -208,15 +274,29 @@
   }
 
   function applyMarketDraft(draft) {
+    var places = NS.geo.normalizePlaces(draft.market.geo && draft.market.geo.places);
     state.market = {
       name: draft.market.name.trim(),
-      description: (draft.market.description || "").trim()
+      description: (draft.market.description || "").trim(),
+      geo: { places: places }
     };
+    if (draft.sender) {
+      state.sender.name = String(draft.sender.name || "").trim().slice(0, 80);
+      state.sender.postal = String(draft.sender.postal || "").trim().slice(0, 160);
+    }
     var keyToId = {};
     state.segments = draft.segments.map(function (segment) {
       var id = segment.id || NS.util.uid("seg");
       keyToId[segment.key] = id;
-      return { id: id, name: segment.name.trim(), description: "" };
+      var audience = segment.audience === "b2b" ? "b2b" : "b2c";
+      return {
+        id: id,
+        name: segment.name.trim(),
+        description: "",
+        audience: audience,
+        params: NS.audience.sanitize(audience, segment.params),
+        custom: normalizeCustom(segment.custom)
+      };
     });
     state.personas = draft.personas.map(function (persona) {
       return {
@@ -226,7 +306,8 @@
         role: (persona.role || "").trim(),
         icp: !!persona.icp,
         icpNote: (persona.icpNote || "").trim(),
-        avatarSeed: Number(persona.avatarSeed) || 1
+        avatarSeed: Number(persona.avatarSeed) || 1,
+        avatar: persona.avatar ? NS.avatars.normalize(persona.avatar) : null
       };
     }).filter(function (persona) { return persona.segmentId; });
     var personaIds = {};
@@ -386,7 +467,7 @@
       mode: "linear",
       exitAction: "",
       templateId: null,
-      comms: NS.registry.blankComms(),
+      comms: NS.registry.blankComms(state),
       createdAt: new Date().toISOString()
     };
     state.nodes.push(node);
@@ -406,7 +487,7 @@
     return writeNode(id, function (node) {
       if (fields.mode) node.mode = fields.mode === "cycle" ? "cycle" : "linear";
       if (fields.exitAction !== undefined) node.exitAction = fields.exitAction;
-      if (fields.comms) node.comms = NS.registry.mergeComms(fields.comms);
+      if (fields.comms) node.comms = NS.registry.mergeComms(fields.comms, state);
       node.templateId = fields.templateId === undefined ? node.templateId : fields.templateId;
     }, { render: "none", nodeId: id });
   }
@@ -422,7 +503,7 @@
     writeNode(targetId, function (node) {
       node.mode = source.mode;
       node.exitAction = source.exitAction;
-      node.comms = NS.registry.mergeComms(source.comms);
+      node.comms = NS.registry.mergeComms(source.comms, state);
       node.templateId = null;
     });
   }
@@ -431,8 +512,11 @@
     var source = findNode(sourceId);
     if (!source) return;
     writeNode(targetId, function (node) {
-      NS.registry.commChannels.forEach(function (ch) {
+      NS.registry.list(state).forEach(function (ch) {
+        if (!node.comms[ch.id] || !source.comms[ch.id]) return;
         node.comms[ch.id].copy = NS.util.clone(source.comms[ch.id].copy);
+        node.comms[ch.id].actions = NS.util.clone(source.comms[ch.id].actions);
+        node.comms[ch.id].checks = NS.util.clone(source.comms[ch.id].checks);
         node.comms[ch.id].enabled = source.comms[ch.id].enabled;
       });
       node.templateId = null;
@@ -443,8 +527,10 @@
     var source = findNode(sourceId);
     if (!source) return;
     writeNode(targetId, function (node) {
-      NS.registry.commChannels.forEach(function (ch) {
+      NS.registry.list(state).forEach(function (ch) {
+        if (!node.comms[ch.id] || !source.comms[ch.id]) return;
         node.comms[ch.id].cadence = NS.util.clone(source.comms[ch.id].cadence);
+        node.comms[ch.id].paceConfirmed = source.comms[ch.id].paceConfirmed;
         node.comms[ch.id].enabled = source.comms[ch.id].enabled;
       });
       node.templateId = null;
@@ -456,7 +542,7 @@
       node.mode = "linear";
       node.exitAction = "";
       node.templateId = null;
-      node.comms = NS.registry.blankComms();
+      node.comms = NS.registry.blankComms(state);
     });
   }
 
@@ -464,7 +550,7 @@
     writeNode(nodeId, function (node) {
       node.mode = template.mode === "cycle" ? "cycle" : "linear";
       node.exitAction = template.exitAction || "";
-      node.comms = NS.registry.mergeComms(template.comms);
+      node.comms = NS.registry.mergeComms(template.comms, state);
       node.templateId = template.id;
     });
   }
@@ -480,7 +566,7 @@
       description: "Saved from this workspace.",
       mode: node.mode,
       exitAction: node.exitAction,
-      comms: NS.registry.mergeComms(node.comms),
+      comms: NS.registry.mergeComms(node.comms, state),
       builtIn: false
     };
     state.templates.push(template);
@@ -494,11 +580,8 @@
   }
 
   function isConfigured(node) {
-    return NS.registry.commChannels.some(function (ch) {
-      var item = node.comms[ch.id];
-      if (!item) return false;
-      if (item.enabled) return true;
-      return ch.fields.some(function (field) { return String(item.copy[field.key] || "").trim(); });
+    return NS.registry.list(state).some(function (ch) {
+      return NS.compliance.ready(ch, node.comms[ch.id], state);
     });
   }
 
@@ -516,13 +599,21 @@
   }
 
   function summary(node) {
-    var parts = [];
-    NS.registry.commChannels.forEach(function (ch) {
+    var ready = [];
+    var waiting = [];
+    NS.registry.list(state).forEach(function (ch) {
       var item = node.comms[ch.id];
-      if (item && item.enabled) parts.push(ch.label + " every " + cadencePhrase(item.cadence.interval, item.cadence.unit));
+      if (!item || !item.enabled) return;
+      var label = ch.label + " every " + cadencePhrase(item.cadence.interval, item.cadence.unit);
+      if (NS.compliance.ready(ch, item, state)) ready.push(label);
+      else waiting.push(ch.label);
     });
-    if (!parts.length) return node.mode === "cycle" ? "Cycle · nothing enabled" : "Linear · nothing enabled";
-    return (node.mode === "cycle" ? "Cycle" : "Linear") + " · " + parts.join(" · ");
+    var mode = node.mode === "cycle" ? "Stays here" : "Then moves on";
+    if (!ready.length && !waiting.length) return mode + " · no channel yet";
+    var text = mode;
+    if (ready.length) text += " · Ready: " + ready.join(", ");
+    if (waiting.length) text += " · Still to check: " + waiting.join(", ");
+    return text;
   }
 
   function advancedCount(stageId) {
@@ -531,18 +622,31 @@
     }).length;
   }
 
-  function addChannel(partial) {
+  function addCatalogChannel(catalogId) {
+    var spec = NS.registry.channelById(catalogId, state);
+    if (!spec) return { ok: false, error: "That channel is not in the catalog." };
+    var existing = state.awareness.channels.filter(function (channel) { return channel.catalogId === spec.id; })[0];
+    if (existing) return { ok: true, channel: existing, existing: true };
+    var actions = {};
+    spec.actions.forEach(function (action, index) { actions[action.id] = index === 0; });
     var count = state.awareness.channels.length;
     var channel = {
       id: NS.util.uid("chn"),
-      name: String(partial.name || "").trim(),
-      kind: partial.kind || "other",
+      name: spec.label,
+      catalogId: spec.id,
+      kind: spec.id,
+      actions: actions,
       x: 16 + (count % 4) * 18,
       y: 22 + (count % 3) * 20
     };
     state.awareness.channels.push(channel);
     commit({ render: "channels", selectChannel: channel.id });
-    return channel;
+    return { ok: true, channel: channel };
+  }
+
+  function addChannel(partial) {
+    if (partial && partial.catalogId) return addCatalogChannel(partial.catalogId);
+    return addCatalogChannel("event");
   }
 
   function updateChannel(id, patch) {
@@ -550,6 +654,10 @@
     if (!channel) return;
     if (patch.name != null) channel.name = String(patch.name).trim() || channel.name;
     if (patch.kind) channel.kind = patch.kind;
+    if (patch.actions) {
+      channel.actions = channel.actions || {};
+      Object.keys(patch.actions).forEach(function (key) { channel.actions[key] = !!patch.actions[key]; });
+    }
     if (Number.isFinite(patch.x)) channel.x = Math.max(6, Math.min(94, patch.x));
     if (Number.isFinite(patch.y)) channel.y = Math.max(8, Math.min(92, patch.y));
     commit({ render: "channels" });
@@ -596,9 +704,71 @@
 
   function convertToContact(id) {
     var person = findPerson(id);
-    if (!person || person.status !== "lead") return;
+    if (!person || person.status === "opted_out") {
+      return { ok: false, error: "They asked to stop. They stay on Do not contact until they ask to hear from you again." };
+    }
+    if (person.status !== "lead") return { ok: false, error: "Only a new name can move into the plan." };
     person.status = "contact";
     commit({ render: "channels" });
+    return { ok: true };
+  }
+
+  function optOutPerson(id) {
+    var person = findPerson(id);
+    if (!person || person.status === "opted_out") return { ok: false };
+    person.status = "opted_out";
+    person.advancedStageId = null;
+    commit({ render: "channels" });
+    return { ok: true };
+  }
+
+  function restorePerson(id) {
+    var person = findPerson(id);
+    if (!person || person.status !== "opted_out") return { ok: false };
+    person.status = "lead";
+    commit({ render: "channels" });
+    return { ok: true };
+  }
+
+  function findOptOutByName(name) {
+    var key = String(name || "").trim().toLowerCase();
+    if (!key) return null;
+    return state.awareness.people.filter(function (person) {
+      return person.status === "opted_out" && person.name.toLowerCase() === key;
+    })[0] || null;
+  }
+
+  function setSender(patch) {
+    if (!patch) return state.sender;
+    if (patch.name != null) state.sender.name = String(patch.name).slice(0, 80);
+    if (patch.postal != null) state.sender.postal = String(patch.postal).slice(0, 160);
+    commit({ render: "none", sender: true });
+    return state.sender;
+  }
+
+  function addExtra(name, group) {
+    var trimmed = String(name || "").trim().slice(0, 40);
+    if (!trimmed) return { ok: false, error: "Name it first." };
+    var taken = state.extras.some(function (extra) { return extra.name.toLowerCase() === trimmed.toLowerCase(); }) ||
+      NS.registry.commChannels.some(function (channel) { return channel.label.toLowerCase() === trimmed.toLowerCase(); });
+    if (taken) return { ok: false, error: "That name is already in the catalog." };
+    var extra = {
+      id: NS.util.uid(group === "social" ? "net" : "cus"),
+      name: trimmed,
+      group: group === "social" ? "social" : "custom"
+    };
+    state.extras.push(extra);
+    commit({ render: "none", extras: true });
+    return { ok: true, extra: extra };
+  }
+
+  function removeExtra(id) {
+    state.extras = state.extras.filter(function (extra) { return extra.id !== id; });
+    state.awareness.channels = state.awareness.channels.filter(function (channel) { return channel.catalogId !== id; });
+    state.nodes.forEach(function (node) {
+      if (node.comms[id]) delete node.comms[id];
+    });
+    commit({ render: "both" });
   }
 
   function assignPersona(id, personaId) {
@@ -610,7 +780,10 @@
 
   function movePersonForward(id) {
     var person = findPerson(id);
-    if (!person || person.status !== "contact") return { ok: false, error: "Only contacts move on." };
+    if (!person || person.status === "opted_out") {
+      return { ok: false, error: "They asked to stop, so they do not move into the sequence." };
+    }
+    if (person.status !== "contact") return { ok: false, error: "Move them into the plan before the next stage." };
     var result = ensureAdvanceStage();
     person.status = "advanced";
     person.advancedStageId = result.stage.id;
@@ -624,6 +797,7 @@
     init: init,
     createInitial: createInitial,
     isPristine: isPristine,
+    marketTitle: marketTitle,
     reset: reset,
     replaceAll: replaceAll,
     applyMarketDraft: applyMarketDraft,
@@ -656,6 +830,7 @@
     summary: summary,
     advancedCount: advancedCount,
     addChannel: addChannel,
+    addCatalogChannel: addCatalogChannel,
     updateChannel: updateChannel,
     removeChannel: removeChannel,
     addWire: addWire,
@@ -663,6 +838,12 @@
     addLead: addLead,
     convertToContact: convertToContact,
     assignPersona: assignPersona,
-    movePersonForward: movePersonForward
+    movePersonForward: movePersonForward,
+    optOutPerson: optOutPerson,
+    restorePerson: restorePerson,
+    findOptOutByName: findOptOutByName,
+    setSender: setSender,
+    addExtra: addExtra,
+    removeExtra: removeExtra
   };
 })(window.NodeCRM);

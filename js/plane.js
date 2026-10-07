@@ -13,7 +13,7 @@
     var stages = state.stages;
     var html = ['<svg id="traces" class="traces" aria-hidden="true"></svg>'];
     html.push('<div class="corner"><p class="caption">Market</p><p class="corner-title">' +
-      NS.util.esc(state.market ? state.market.name : "Not set") + "</p></div>");
+      NS.util.esc(state.market ? (NS.model.marketTitle() || "Untitled market") : "Not set") + "</p></div>");
     stages.forEach(function (stage, index) {
       html.push(NS.stages.headerHTML(stage, index));
     });

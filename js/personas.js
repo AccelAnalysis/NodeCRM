@@ -12,7 +12,7 @@
       '<div class="persona-name">' + NS.util.esc(persona.name) + badge + "</div>" +
       (persona.role ? '<div class="persona-role">' + NS.util.esc(persona.role) + "</div>" : "") +
       "</div>" +
-      '<button type="button" class="icon-btn persona-remove" data-action="remove-persona" data-persona-id="' + persona.id + '" aria-label="Remove ' + NS.util.esc(persona.name) + '">×</button>' +
+      '<button type="button" class="icon-btn persona-remove" data-action="remove-persona" data-persona-id="' + persona.id + '" aria-label="Remove ' + NS.util.esc(persona.name) + '">' + NS.util.icon("close") + "</button>" +
       "</div></div>";
   }
 
@@ -20,7 +20,8 @@
     return '<button type="button" class="y-start" data-action="open-wizard" data-testid="y-axis-start">' +
       '<span class="y-kicker">Personas</span>' +
       "<strong>Define your market</strong>" +
-      "<span>Segments and people land on this axis. ICP is a badge on a person, not its own row.</span>" +
+      "<span>Segments and people land on this axis. ICP is a badge, not a row.</span>" +
+      '<span class="y-cta">Begin ' + NS.util.icon("chevron") + "</span>" +
       "</button>";
   }
 

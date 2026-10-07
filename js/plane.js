@@ -12,8 +12,8 @@
     var state = NS.model.get();
     var stages = state.stages;
     var html = ['<svg id="traces" class="traces" aria-hidden="true"></svg>'];
-    html.push('<div class="corner"><span class="corner-kicker">Market</span><strong>' +
-      NS.util.esc(state.market ? state.market.name : "Not set") + "</strong><span>Stages across. Personas down.</span></div>");
+    html.push('<div class="corner"><p class="caption">Market</p><p class="corner-title">' +
+      NS.util.esc(state.market ? state.market.name : "Not set") + "</p></div>");
     stages.forEach(function (stage, index) {
       html.push(NS.stages.headerHTML(stage, index));
     });

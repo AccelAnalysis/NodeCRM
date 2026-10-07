@@ -23,17 +23,19 @@ This repo is laid out for a project site from the repository root (`index.html` 
 1. Open the repository **Settings → Pages**.
 2. Under **Build and deployment**, choose **Deploy from a branch**.
 3. Branch: `main`. Folder: `/ (root)`. Save.
-4. Expected site: `https://accelanalysis.github.io/NodeCRM/`
+4. Live site: `https://accelanalysis.github.io/NodeCRM/`
 
-**This repository is private.** GitHub Pages publishes from public repositories on GitHub Free. Publishing a **private** repository requires **GitHub Pro, GitHub Team, GitHub Enterprise Cloud, or GitHub Enterprise Server**. On a free plan, Pages will not publish while this repo stays private. Either use a plan that includes private Pages, or make the repository public.
+Pages publishes this public repository from `main`. The redesign is on the site after that branch updates.
 
 ## What you should see
 
-An empty plane, not a setup wizard:
+An empty plane, not a setup wizard. The plane is the whole view. A translucent toolbar floats above it.
 
 - The x-axis starts with **Awareness** and a **+** control for more stages.
-- The y-axis starts with one block. Click it to define the market.
-- The background is bluish charcoal with a black dot stipple. There are no grid lines.
+- The y-axis starts with one block, **Define your market**. That is the only primary action on an empty plane.
+- The background is bluish charcoal with a fine black stipple. There are no grid lines.
+
+The interface follows Apple’s Human Interface Guidelines in a dark-first layout: system type, one accent, glass toolbar and sheets, and short motion. Sheets hold the wizard, node communications, confirms, and the channel map so the plane stays clear. If the system asks to reduce motion, lines and sheets fade instead of traveling. If it asks to reduce transparency, materials become solid.
 
 The market wizard (reopen any time) asks for a target market, segments, and personas. Each segment becomes a row group. **ICP is a badge on a persona**, not its own row. Faces are generated and animated in the page.
 
@@ -100,4 +102,4 @@ js/
 - Recommended stage names: `js/stages.js` `RECOMMENDED`. Keep the first entry `kind: "awareness"` so the channel map has a home. Names are defaults; users can rename every stage.
 - Avatar palettes and hair styles: `js/avatars.js`.
 
-Workspace data is stored under the key `nodecrm.v1`.
+Workspace data is stored under the key `nodecrm.v1`. This redesign keeps that shape. A plane saved by the previous version loads as it is. If the saved value cannot be read, NodeCRM opens an empty plane instead of failing. **Reset** clears this browser’s copy.

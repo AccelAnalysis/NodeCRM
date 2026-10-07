@@ -154,26 +154,24 @@
 
   function stepsHTML() {
     var labels = ["Market", "Segments", "Personas", "Review"];
-    return '<ol class="steps">' + labels.map(function (label, index) {
-      var num = index + 1;
-      var cls = num === draft.step ? " is-on" : num < draft.step ? " is-done" : "";
-      return '<li class="' + cls.trim() + '"><span>' + num + "</span>" + label + "</li>";
-    }).join("") + "</ol>";
+    var current = labels[draft.step - 1];
+    return '<div class="progress" role="progressbar" aria-valuemin="1" aria-valuemax="4" aria-valuenow="' + draft.step + '" aria-valuetext="Step ' + draft.step + " of 4, " + current + '">' +
+      '<span style="width:' + (draft.step / 4 * 100) + '%"></span></div>';
   }
 
   function marketHTML() {
-    return '<label>Target market<input data-market-name maxlength="80" required placeholder="Who you serve" value="' + NS.util.esc(draft.market.name) + '"></label>' +
+    return '<label>Name<input data-market-name maxlength="80" required placeholder="Who you serve" value="' + NS.util.esc(draft.market.name) + '"></label>' +
       '<label>Notes<textarea data-market-desc maxlength="280" rows="3" placeholder="Optional. What this market has in common.">' + NS.util.esc(draft.market.description) + "</textarea></label>";
   }
 
   function segmentsHTML() {
     var rows = draft.segments.map(function (segment, index) {
       return '<div class="edit-row"><input data-seg-key="' + NS.util.esc(segment.key) + '" maxlength="48" placeholder="Segment name" value="' + NS.util.esc(segment.name) + '" aria-label="Segment name">' +
-        '<button type="button" class="icon-btn" data-action="seg-up" data-index="' + index + '" aria-label="Move segment up"' + (index === 0 ? " disabled" : "") + ">↑</button>" +
-        '<button type="button" class="icon-btn" data-action="seg-down" data-index="' + index + '" aria-label="Move segment down"' + (index === draft.segments.length - 1 ? " disabled" : "") + ">↓</button>" +
-        '<button type="button" class="icon-btn" data-action="seg-remove" data-index="' + index + '" aria-label="Remove segment">×</button></div>';
+        '<button type="button" class="icon-btn" data-action="seg-up" data-index="' + index + '" aria-label="Move segment up"' + (index === 0 ? " disabled" : "") + ">" + NS.util.icon("up") + "</button>" +
+        '<button type="button" class="icon-btn" data-action="seg-down" data-index="' + index + '" aria-label="Move segment down"' + (index === draft.segments.length - 1 ? " disabled" : "") + ">" + NS.util.icon("down") + "</button>" +
+        '<button type="button" class="icon-btn" data-action="seg-remove" data-index="' + index + '" aria-label="Remove segment">' + NS.util.icon("close") + "</button></div>";
     }).join("");
-    return "<p class='fine'>Each segment becomes a group of rows on the persona axis.</p>" + rows +
+    return rows +
       '<button type="button" class="btn" data-action="seg-add">Add segment</button>';
   }
 
@@ -189,19 +187,19 @@
           '<div class="persona-fields">' +
           '<label>Name<input data-field="name" maxlength="48" value="' + NS.util.esc(persona.name) + '" placeholder="Persona name"></label>' +
           '<label>Role<input data-field="role" maxlength="48" value="' + NS.util.esc(persona.role) + '" placeholder="Role or job"></label>' +
-          '<label class="check"><input data-field="icp" type="checkbox"' + (persona.icp ? " checked" : "") + "> ICP badge</label>" +
-          '<label>Badge note<input data-field="icpNote" maxlength="80" value="' + NS.util.esc(persona.icpNote) + '" placeholder="Optional. Shown on the badge."></label>' +
+          '<label class="check"><input data-field="icp" type="checkbox"' + (persona.icp ? " checked" : "") + "> Mark as ICP</label>" +
+          '<label>Badge note<input data-field="icpNote" maxlength="80" value="' + NS.util.esc(persona.icpNote) + '" placeholder="Optional. Shown with the badge."></label>' +
           '<div class="edit-row">' +
-          '<button type="button" class="btn btn-ghost" data-action="shuffle-face" data-key="' + NS.util.esc(persona.key) + '">Another face</button>' +
-          '<button type="button" class="icon-btn" data-action="per-up" data-index="' + index + '" aria-label="Move persona up">↑</button>' +
-          '<button type="button" class="icon-btn" data-action="per-down" data-index="' + index + '" aria-label="Move persona down">↓</button>' +
-          '<button type="button" class="icon-btn" data-action="per-remove" data-key="' + NS.util.esc(persona.key) + '" aria-label="Remove persona">×</button>' +
+          '<button type="button" class="btn btn-plain" data-action="shuffle-face" data-key="' + NS.util.esc(persona.key) + '">Another face</button>' +
+          '<button type="button" class="icon-btn" data-action="per-up" data-index="' + index + '" aria-label="Move persona up">' + NS.util.icon("up") + "</button>" +
+          '<button type="button" class="icon-btn" data-action="per-down" data-index="' + index + '" aria-label="Move persona down">' + NS.util.icon("down") + "</button>" +
+          '<button type="button" class="icon-btn" data-action="per-remove" data-key="' + NS.util.esc(persona.key) + '" aria-label="Remove persona">' + NS.util.icon("close") + "</button>" +
           "</div></div></article>";
       }).join("");
       return '<section class="segment-block"><header><h3>' + NS.util.esc(segment.name) + "</h3>" +
         '<button type="button" class="btn" data-action="per-add" data-key="' + NS.util.esc(segment.key) + '">Add persona</button></header>' +
         (cards || '<p class="fine">No personas in this segment yet.</p>') + "</section>";
-    }).join("") + '<p class="fine">ICP is a badge on the persona. It does not add a row.</p>';
+    }).join("");
   }
 
   function reviewHTML() {
@@ -213,23 +211,31 @@
           NS.util.esc(persona.name) + "</strong>" + (persona.icp ? ' <span class="icp">ICP</span>' : "") +
           (persona.role ? '<div class="persona-role">' + NS.util.esc(persona.role) + "</div>" : "") + "</div></div>";
       }).join("");
-      return "<section><h3>" + NS.util.esc(segment.name) + "</h3>" + (cards || "<p class='fine'>No personas</p>") + "</section>";
+      return '<section class="review-block"><h3>' + NS.util.esc(segment.name) + "</h3>" + (cards || "<p class='fine'>No personas</p>") + "</section>";
     }).join("");
     return "<p><strong>" + NS.util.esc(data.market.name) + "</strong></p>" +
       (data.market.description ? "<p class='fine'>" + NS.util.esc(data.market.description) + "</p>" : "") + body;
   }
 
   function render() {
+    var titles = [
+      ["Target market", "Name who this plane is for."],
+      ["Segments", "Each segment becomes a group of rows."],
+      ["Personas", "People on the side axis. ICP is a badge, not a row."],
+      ["Review", "This is what lands on the plane."]
+    ];
+    var meta = titles[draft.step - 1];
     var body = draft.step === 1 ? marketHTML() : draft.step === 2 ? segmentsHTML() : draft.step === 3 ? personasHTML() : reviewHTML();
-    var nextLabel = draft.step === 4 ? "Put on the plane" : "Continue";
-    root().innerHTML = '<form class="wizard-card" data-testid="wizard-card">' +
-      '<header class="wizard-head"><div><p class="fine">Market and personas</p><h2>Who is this plane for?</h2></div>' +
-      '<button type="button" class="icon-btn" data-action="wizard-close" aria-label="Close">×</button></header>' +
+    var nextLabel = draft.step === 4 ? "Done" : "Continue";
+    root().innerHTML = '<form class="wizard-card" data-testid="wizard-card" role="dialog" aria-modal="true" aria-labelledby="wizard-title">' +
+      '<div class="sheet-grabber" aria-hidden="true"></div>' +
+      '<header class="wizard-head"><div><p class="caption">Step ' + draft.step + ' of 4</p><h2 id="wizard-title">' + meta[0] + '</h2><p class="sheet-lead">' + meta[1] + "</p></div>" +
+      '<button type="button" class="icon-btn" data-action="wizard-close" aria-label="Close">' + NS.util.icon("close") + "</button></header>" +
       stepsHTML() +
       '<div class="wizard-body">' + body + "</div>" +
-      '<p class="form-error"' + (draft.error ? "" : " hidden") + ">" + NS.util.esc(draft.error || "") + "</p>" +
+      '<p class="form-error" role="alert"' + (draft.error ? "" : " hidden") + ">" + NS.util.esc(draft.error || "") + "</p>" +
       '<footer class="wizard-foot">' +
-      '<button type="button" class="btn btn-ghost" data-action="wizard-back"' + (draft.step === 1 ? " disabled" : "") + ">Back</button>" +
+      '<button type="button" class="btn btn-plain" data-action="wizard-back"' + (draft.step === 1 ? " disabled" : "") + ">Back</button>" +
       '<button type="submit" class="btn btn-primary" data-testid="wizard-next">' + nextLabel + "</button>" +
       "</footer></form>";
   }
@@ -265,6 +271,10 @@
   }
 
   async function onClick(event) {
+    if (event.target === root()) {
+      close();
+      return;
+    }
     var button = event.target.closest("[data-action]");
     if (!button || !draft) return;
     var action = button.dataset.action;

@@ -48,8 +48,8 @@
   flex-direction: column;
   justify-content: flex-end;
   gap: 2px;
-  min-height: 96px;
-  padding: 16px 16px 14px;
+  min-height: 88px;
+  padding: 28px 16px 12px;
 }
 
 .corner-title {
@@ -62,8 +62,8 @@
 }
 
 .stage-head {
-  min-height: 96px;
-  padding: 8px 12px 12px;
+  min-height: 88px;
+  padding: 28px 12px 12px;
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: end;
@@ -74,11 +74,11 @@
 .stage-head.is-awareness .stage-label { color: var(--accent-bright); }
 
 .stage-tools {
-  grid-column: 1 / -1;
-  justify-self: end;
+  position: absolute;
+  top: 4px;
+  right: 4px;
   display: flex;
   gap: 0;
-  min-height: 28px;
 }
 
 .stage-title {
@@ -132,7 +132,8 @@
 
 .count-pill {
   grid-column: 2;
-  grid-row: 2;
+  grid-row: 1;
+  align-self: center;
   min-width: 20px;
   height: 20px;
   padding: 0 6px;
@@ -420,6 +421,8 @@
   .stage-title .mini-icon,
   .persona-remove { opacity: 0; }
 
+  .stage-tools { pointer-events: none; }
+
   .stage-head:hover .stage-tools,
   .stage-head:focus-within .stage-tools,
   .stage-head:hover .stage-title .mini-icon,
@@ -427,6 +430,9 @@
   .persona-card:hover .persona-remove,
   .persona-remove:focus,
   .persona-remove:focus-visible { opacity: 1; }
+
+  .stage-head:hover .stage-tools,
+  .stage-head:focus-within .stage-tools { pointer-events: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {

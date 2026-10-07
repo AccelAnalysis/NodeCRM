@@ -104,6 +104,7 @@
       '<p class="fine" id="mode-hint">' + NS.util.esc(modeHint(node.mode)) + "</p>" +
       '<label id="exit-label">' + (node.mode === "cycle" ? "Stays until" : "Completed when") +
       '<input data-field="exitAction" type="text" maxlength="120" value="' + NS.util.esc(node.exitAction) + '" placeholder="' + (node.mode === "cycle" ? "They buy, book, or ask to stop" : "The sequence has been sent") + '"></label>' +
+      channels +
       '<div><p class="group-label">Start from</p><div class="group-list">' +
       '<button type="button" class="group-row" data-action="act-clone"><span>Clone another node</span><span class="chev" aria-hidden="true">' + NS.util.icon("chevron") + "</span></button>" +
       '<button type="button" class="group-row" data-action="act-copy"><span>Keep copy, change cadence</span><span class="chev" aria-hidden="true">' + NS.util.icon("chevron") + "</span></button>" +
@@ -112,7 +113,6 @@
       '<button type="button" class="group-row" data-action="act-rebuild"><span>Rebuild</span></button>' +
       "</div></div>" +
       pickerHTML() +
-      channels +
       '<details class="disclosure"><summary>Save as template</summary><div class="disclosure-body">' +
       '<label>Template name<input id="template-name" maxlength="48" placeholder="Name"></label>' +
       '<button type="button" class="btn btn-tinted" data-action="save-template">Save template</button></div></details>' +
@@ -122,6 +122,10 @@
     if (emphasize) {
       var hot = root().querySelector(".is-hot input, .is-hot textarea, .is-hot select");
       if (hot) hot.focus();
+    }
+    if (picker) {
+      var list = root().querySelector(".picker");
+      if (list) list.scrollIntoView({ block: "nearest" });
     }
   }
 

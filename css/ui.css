@@ -6,9 +6,9 @@
   align-items: center;
   justify-content: center;
   padding: 24px 16px;
-  background: rgba(6, 8, 12, 0.46);
-  backdrop-filter: blur(14px) saturate(1.2);
-  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  background: rgba(6, 8, 12, 0.62);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
   animation: fade-in var(--dur) var(--ease);
 }
 
@@ -20,7 +20,7 @@
 .modal,
 .popover,
 .map-sheet {
-  background: var(--glass-thick);
+  background: rgba(28, 33, 42, 0.97);
   border: 1px solid var(--glass-stroke);
   box-shadow: var(--shadow-2), inset 0 0.5px 0 rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(28px) saturate(1.45);

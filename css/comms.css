@@ -1,0 +1,66 @@
+#comms { position: fixed; inset: 0; z-index: 40; }
+
+.scrim { position: absolute; inset: 0; background: rgba(7, 12, 16, 0.45); }
+
+.drawer-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(460px, 100%);
+  display: flex;
+  flex-direction: column;
+  background: #1c2b39;
+  box-shadow: var(--shadow);
+}
+
+.drawer-head, .drawer-foot { display: flex; justify-content: space-between; gap: 12px; padding: 14px 16px; }
+.drawer-scroll { overflow: auto; padding: 0 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+
+.mode-switch { display: flex; gap: 8px; }
+.mode-option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 8px;
+}
+.mode-option:has(input:checked) { border-color: var(--teal); color: var(--teal-2); }
+.mode-option input { accent-color: var(--teal); }
+
+.action-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.action-row .btn { border-radius: 10px; }
+
+.channel-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 14px;
+  background: rgba(10, 16, 22, 0.28);
+}
+.channel-block.is-off { opacity: 0.72; }
+.channel-block header { display: flex; }
+
+.cadence { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+.cadence input { width: 72px; }
+.cadence select { width: auto; }
+
+.is-hot input, .is-hot textarea, .is-hot select { box-shadow: 0 0 0 2px var(--gold); }
+
+.picker { display: flex; flex-direction: column; gap: 6px; }
+.picker button, .picker-row {
+  text-align: left;
+  border: 1px solid var(--line);
+  background: #14202b;
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+.picker button { display: flex; flex-direction: column; gap: 2px; width: 100%; }
+.picker-row { display: flex; align-items: center; gap: 8px; padding: 4px; }
+.picker-row button:first-child { flex: 1; border: 0; background: transparent; }
+.picker span, .save-template { color: var(--muted); font-size: 12px; }
+.save-template { display: flex; flex-direction: column; gap: 8px; }

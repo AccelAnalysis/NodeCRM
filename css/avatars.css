@@ -1,0 +1,48 @@
+.avatar {
+  width: 58px;
+  height: 70px;
+  flex: none;
+}
+
+.avatar.lg { width: 74px; height: 88px; }
+
+.avatar-svg { width: 100%; height: 100%; display: block; overflow: visible; }
+
+.avatar-svg .sway {
+  transform-box: view-box;
+  transform-origin: 40px 92px;
+  animation: sway 5.6s ease-in-out var(--phase) infinite;
+}
+
+.avatar-svg .breathe {
+  transform-box: view-box;
+  transform-origin: 40px 72px;
+  animation: breathe var(--breath) ease-in-out var(--phase) infinite;
+}
+
+.avatar-svg .blink {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: blink var(--blink) linear var(--phase) infinite;
+}
+
+@keyframes sway {
+  0%, 100% { transform: rotate(-1.1deg); }
+  50% { transform: rotate(1.1deg); }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.04, 0.98); }
+}
+
+@keyframes blink {
+  0%, 46%, 52%, 100% { transform: scaleY(1); }
+  49% { transform: scaleY(0.08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .avatar-svg .sway,
+  .avatar-svg .breathe,
+  .avatar-svg .blink { animation: none; }
+}
